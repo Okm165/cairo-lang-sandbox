@@ -6,11 +6,11 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, HashBuiltin, P
 from starkware.cairo.common.hash_state import hash_felts
 from starkware.cairo.common.math import assert_nn_le
 from starkware.cairo.common.registers import get_label_location
-from starkware.cairo.stark_verifier.air.layouts.small.public_verify import (
+from starkware.cairo.stark_verifier.air.layouts.starknet_with_keccak.public_verify import (
     get_layout_builtins,
     segments,
 )
-from starkware.cairo.stark_verifier.air.layouts.small.verify import verify_proof
+from starkware.cairo.stark_verifier.air.layouts.starknet_with_keccak.verify import verify_proof
 from starkware.cairo.stark_verifier.air.public_input import PublicInput, SegmentInfo
 from starkware.cairo.stark_verifier.air.public_memory import AddrValue
 from starkware.cairo.stark_verifier.core.stark import StarkProof
