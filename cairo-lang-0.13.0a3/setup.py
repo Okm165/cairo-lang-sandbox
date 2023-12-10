@@ -23,6 +23,13 @@ setuptools.setup(
     package_data={
         "starkware.cairo.cairo_verifier": ["*.cairo", "*/*.cairo"],
         "starkware.cairo.stark_verifier.air": ["*.cairo", "*/*.cairo"],
+        "starkware.cairo.stark_verifier.air.layouts": ["*.cairo", "*/*.cairo"],
+        "starkware.cairo.stark_verifier.air.layouts.all_cairo": ["*.cairo", "*/*.cairo"],
+        "starkware.cairo.stark_verifier.air.layouts.dex": ["*.cairo", "*/*.cairo"],
+        "starkware.cairo.stark_verifier.air.layouts.dynamic": ["*.cairo", "*/*.cairo"],
+        "starkware.cairo.stark_verifier.air.layouts.recursive": ["*.cairo", "*/*.cairo"],
+        "starkware.cairo.stark_verifier.air.layouts.small": ["*.cairo", "*/*.cairo"],
+        "starkware.cairo.stark_verifier.air.layouts.starknet": ["*.cairo", "*/*.cairo"],
         "starkware.cairo.stark_verifier.air.layouts.starknet_with_keccak": ["*.cairo", "*/*.cairo"],
         "starkware.cairo.stark_verifier.core": ["*.cairo", "*/*.cairo"],
         "starkware.cairo.stark_verifier.core.fri": ["*.cairo", "*/*.cairo"],
