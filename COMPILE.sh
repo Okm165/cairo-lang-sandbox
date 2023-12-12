@@ -1,4 +1,4 @@
-cairo-compile --cairo_path=./src src/starkware/cairo/cairo_verifier/layouts/all_cairo/cairo_verifier.cairo --output cairo_verifier.json --no_debug_info
+cairo-compile --cairo_path=./src src/starkware/cairo/cairo_verifier/layouts/starknet_with_keccak/cairo_verifier.cairo --output cairo_verifier.json --no_debug_info
 
 # General
 cairo-run \
