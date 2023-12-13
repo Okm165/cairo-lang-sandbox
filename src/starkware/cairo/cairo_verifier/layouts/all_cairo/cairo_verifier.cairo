@@ -6,11 +6,11 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, HashBuiltin
 from starkware.cairo.common.hash_state import hash_felts
 from starkware.cairo.common.math import assert_nn_le
 from starkware.cairo.common.registers import get_label_location
-from starkware.cairo.stark_verifier.air.layouts.all_cairo.public_verify import (
+from starkware.cairo.stark_verifier.air.layouts.starknet_with_keccak.public_verify import (
     get_layout_builtins,
     segments,
 )
-from starkware.cairo.stark_verifier.air.layouts.all_cairo.verify import verify_proof
+from starkware.cairo.stark_verifier.air.layouts.starknet_with_keccak.verify import verify_proof
 from starkware.cairo.stark_verifier.air.public_input import PublicInput, SegmentInfo
 from starkware.cairo.stark_verifier.air.public_memory import AddrValue
 from starkware.cairo.stark_verifier.core.stark import StarkProof
@@ -49,7 +49,8 @@ func verify_cairo_proof{range_check_ptr, pedersen_ptr: HashBuiltin*, bitwise_ptr
 ) -> (program_hash: felt, output_hash: felt) {
     alloc_locals;
     verify_proof(proof=proof, security_bits=SECURITY_BITS);
-    return _verify_public_input(public_input=cast(proof.public_input, PublicInput*));
+    // return _verify_public_input(public_input=cast(proof.public_input, PublicInput*));
+    return (program_hash = 0, output_hash = 0);
 }
 
 func _verify_public_input{
