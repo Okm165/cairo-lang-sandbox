@@ -1,0 +1,1379 @@
+{
+    "attributes": [],
+    "builtins": [],
+    "compiler_version": "0.13.0",
+    "data": [],
+    "debug_info": {
+        "file_contents": {
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/bazel-out/k8-opt-exec-2B5CBBC6-ST-03cbce6a7308/bin/src/starkware/cairo/lang/compiler/cairo_compile_exe.runfiles/__main__/src/starkware/cairo/lang/compiler/lib/registers.cairo": "// Returns the contents of the fp and pc registers of the calling function.\n// The pc register's value is the address of the instruction that follows directly after the\n// invocation of get_fp_and_pc().\nfunc get_fp_and_pc() -> (fp_val: felt*, pc_val: felt*) {\n    // The call instruction itself already places the old fp and the return pc at\n    // [ap - 2], [ap - 1].\n    return (fp_val=cast([ap - 2], felt*), pc_val=cast([ap - 1], felt*));\n}\n\n// Returns the content of the ap register just before this function was invoked.\n@known_ap_change\nfunc get_ap() -> (ap_val: felt*) {\n    // Once get_ap() is invoked, fp points to ap + 2 (since the call instruction placed the old fp\n    // and pc in memory, advancing ap accordingly).\n    // Hence, the desired ap value is fp - 2.\n    let (fp_val, pc_val) = get_fp_and_pc();\n    return (ap_val=fp_val - 2);\n}\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/alloc.cairo": "// Allocates a new memory segment.\nfunc alloc() -> (ptr: felt*) {\n    %{ memory[ap] = segments.add() %}\n    ap += 1;\n    return (ptr=cast([ap - 1], felt*));\n}\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/bitwise.cairo": "from starkware.cairo.common.cairo_builtins import BitwiseBuiltin\n\nconst ALL_ONES = 2 ** 251 - 1;\n\n// Computes the bitwise operations and, xor and or.\n//\n// Arguments:\n//   bitwise_ptr - the bitwise builtin pointer.\n//   x, y - the two field elements to operate on, in this order. Both inputs should be 251-bit\n//     integers, and are taken as unsigned ints.\n//\n// Returns:\n//   x_and_y = x & y (bitwise and).\n//   x_xor_y = x ^ y (bitwise xor).\n//   x_or_y = x | y (bitwise or).\nfunc bitwise_operations{bitwise_ptr: BitwiseBuiltin*}(x: felt, y: felt) -> (\n    x_and_y: felt, x_xor_y: felt, x_or_y: felt\n) {\n    bitwise_ptr.x = x;\n    bitwise_ptr.y = y;\n    let x_and_y = bitwise_ptr.x_and_y;\n    let x_xor_y = bitwise_ptr.x_xor_y;\n    let x_or_y = bitwise_ptr.x_or_y;\n    let bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;\n    return (x_and_y=x_and_y, x_xor_y=x_xor_y, x_or_y=x_or_y);\n}\n\n// Computes the bitwise and of two inputs.\n//\n// Arguments:\n//   bitwise_ptr - the bitwise builtin pointer.\n//   x, y - the two field elements to operate on, in this order. Both inputs should be 251-bit\n//     integers, and are taken as unsigned ints.\n//\n// Returns:\n//   x_and_y = x & y (bitwise and).\nfunc bitwise_and{bitwise_ptr: BitwiseBuiltin*}(x: felt, y: felt) -> (x_and_y: felt) {\n    bitwise_ptr.x = x;\n    bitwise_ptr.y = y;\n    let x_and_y = bitwise_ptr.x_and_y;\n    let x_xor_y = bitwise_ptr.x_xor_y;\n    let x_or_y = bitwise_ptr.x_or_y;\n    let bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;\n    return (x_and_y=x_and_y);\n}\n\n// Computes the bitwise xor of two inputs.\n//\n// Arguments:\n//   bitwise_ptr - the bitwise builtin pointer.\n//   x, y - the two field elements to operate on, in this order. Both inputs should be 251-bit\n//     integers, and are taken as unsigned ints.\n//\n// Returns:\n//   x_xor_y = x ^ y (bitwise xor).\nfunc bitwise_xor{bitwise_ptr: BitwiseBuiltin*}(x: felt, y: felt) -> (x_xor_y: felt) {\n    bitwise_ptr.x = x;\n    bitwise_ptr.y = y;\n    let x_and_y = bitwise_ptr.x_and_y;\n    let x_xor_y = bitwise_ptr.x_xor_y;\n    let x_or_y = bitwise_ptr.x_or_y;\n    let bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;\n    return (x_xor_y=x_xor_y);\n}\n\n// Computes the bitwise or of two inputs.\n//\n// Arguments:\n//   bitwise_ptr - the bitwise builtin pointer.\n//   x, y - the two field elements to operate on, in this order. Both inputs should be 251-bit\n//     integers, and are taken as unsigned ints.\n//\n// Returns:\n//   x_or_y = x | y (bitwise or).\nfunc bitwise_or{bitwise_ptr: BitwiseBuiltin*}(x: felt, y: felt) -> (x_or_y: felt) {\n    bitwise_ptr.x = x;\n    bitwise_ptr.y = y;\n    let x_and_y = bitwise_ptr.x_and_y;\n    let x_xor_y = bitwise_ptr.x_xor_y;\n    let x_or_y = bitwise_ptr.x_or_y;\n    let bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;\n    return (x_or_y=x_or_y);\n}\n\n// Computes the bitwise not of a single 251-bit integer.\n//\n// Argument:\n//   x - the field element to operate on. The input should be a 251-bit\n//     integer, and is taken as unsigned int.\n//\n// Returns:\n//   not_x = ~x (bitwise not).\nfunc bitwise_not(x: felt) -> (not_x: felt) {\n    return (not_x=ALL_ONES - x);\n}\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/bool.cairo": "// Represents boolean values in Cairo.\nconst FALSE = 0;\nconst TRUE = 1;\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/cairo_builtins.cairo": "from starkware.cairo.common.ec_point import EcPoint\nfrom starkware.cairo.common.keccak_state import KeccakBuiltinState\nfrom starkware.cairo.common.poseidon_state import PoseidonBuiltinState\n\n// Specifies the hash builtin memory structure.\nstruct HashBuiltin {\n    x: felt,\n    y: felt,\n    result: felt,\n}\n\n// Specifies the signature builtin memory structure.\nstruct SignatureBuiltin {\n    pub_key: felt,\n    message: felt,\n}\n\n// Specifies the bitwise builtin memory structure.\nstruct BitwiseBuiltin {\n    x: felt,\n    y: felt,\n    x_and_y: felt,\n    x_xor_y: felt,\n    x_or_y: felt,\n}\n\n// Specifies the EC operation builtin memory structure.\nstruct EcOpBuiltin {\n    p: EcPoint,\n    q: EcPoint,\n    m: felt,\n    r: EcPoint,\n}\n\n// Specifies the Keccak builtin memory structure.\nstruct KeccakBuiltin {\n    input: KeccakBuiltinState,\n    output: KeccakBuiltinState,\n}\n\n// Specifies the Poseidon builtin memory structure.\nstruct PoseidonBuiltin {\n    input: PoseidonBuiltinState,\n    output: PoseidonBuiltinState,\n}\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/cairo_secp/bigint.cairo": "from starkware.cairo.common.cairo_secp.bigint3 import BigInt3, UnreducedBigInt3\nfrom starkware.cairo.common.cairo_secp.constants import BASE\nfrom starkware.cairo.common.math import assert_nn, assert_nn_le, unsigned_div_rem\nfrom starkware.cairo.common.math_cmp import RC_BOUND\nfrom starkware.cairo.common.uint256 import Uint256\n\n// Represents a big integer defined by:\n//   sum_i(BASE**i * d_i).\n// Note that the limbs (d_i) are NOT restricted to the range [0, BASE) and in particular they\n// can be negative.\nstruct UnreducedBigInt5 {\n    d0: felt,\n    d1: felt,\n    d2: felt,\n    d3: felt,\n    d4: felt,\n}\n\n// Computes the multiplication of two big integers, given in BigInt3 representation.\n//\n// Arguments:\n//   x, y - the two BigInt3 to operate on.\n//\n// Returns:\n//   x * y in an UnreducedBigInt5 representation.\nfunc bigint_mul(x: BigInt3, y: BigInt3) -> (res: UnreducedBigInt5) {\n    return (\n        UnreducedBigInt5(\n            d0=x.d0 * y.d0,\n            d1=x.d0 * y.d1 + x.d1 * y.d0,\n            d2=x.d0 * y.d2 + x.d1 * y.d1 + x.d2 * y.d0,\n            d3=x.d1 * y.d2 + x.d2 * y.d1,\n            d4=x.d2 * y.d2,\n        ),\n    );\n}\n\n// Returns a BigInt3 instance whose value is controlled by a prover hint.\n//\n// Soundness guarantee: each limb is in the range [0, 3 * BASE).\n// Completeness guarantee (honest prover): the value is in reduced form and in particular,\n// each limb is in the range [0, BASE).\n//\n// Implicit arguments:\n//   range_check_ptr - range check builtin pointer.\n//\n// Hint arguments: value.\nfunc nondet_bigint3{range_check_ptr}() -> (res: BigInt3) {\n    // The result should be at the end of the stack after the function returns.\n    let res: BigInt3 = [cast(ap + 5, BigInt3*)];\n    %{\n        from starkware.cairo.common.cairo_secp.secp_utils import split\n\n        segments.write_arg(ids.res.address_, split(value))\n    %}\n    // The maximal possible sum of the limbs, assuming each of them is in the range [0, BASE).\n    const MAX_SUM = 3 * (BASE - 1);\n    assert [range_check_ptr] = MAX_SUM - (res.d0 + res.d1 + res.d2);\n\n    // Prepare the result at the end of the stack.\n    tempvar range_check_ptr = range_check_ptr + 4;\n    [range_check_ptr - 3] = res.d0, ap++;\n    [range_check_ptr - 2] = res.d1, ap++;\n    [range_check_ptr - 1] = res.d2, ap++;\n    static_assert &res + BigInt3.SIZE == ap;\n    return (res=res);\n}\n\n// Converts a BigInt3 instance into a Uint256.\n//\n// Assumptions:\n// * The limbs of x are in the range [0, BASE * 3).\n// * x is in the range [0, 2 ** 256).\n// * PRIME is at least 174 bits.\n// Implicit arguments:\n//   range_check_ptr - range check builtin pointer.\nfunc bigint_to_uint256{range_check_ptr}(x: BigInt3) -> (res: Uint256) {\n    let low = [range_check_ptr];\n    let high = [range_check_ptr + 1];\n    let range_check_ptr = range_check_ptr + 2;\n    %{ ids.low = (ids.x.d0 + ids.x.d1 * ids.BASE) & ((1 << 128) - 1) %}\n    // Because PRIME is at least 174 bits, the numerator doesn't overflow.\n    tempvar a = ((x.d0 + x.d1 * BASE) - low) / RC_BOUND;\n    const D2_SHIFT = BASE * BASE / RC_BOUND;\n    const A_BOUND = 4 * D2_SHIFT;\n    // We'll check that the division in `a` doesn't cause an overflow. This means that the 128 LSB\n    // of (x.d0 + x.d1 * BASE) and low are identical, which ensures that low is correct.\n    assert_nn_le(a, A_BOUND - 1);\n    // high * RC_BOUND = a * RC_BOUND + x.d2 * BASE ** 2 =\n    //   = x.d0 + x.d1 * BASE + x.d2 * BASE ** 2 - low = num - low.\n    with_attr error_message(\"x out of range\") {\n        assert high = a + x.d2 * D2_SHIFT;\n    }\n\n    return (res=Uint256(low=low, high=high));\n}\n\n// Converts a Uint256 instance into a BigInt3.\n// Assuming x is a valid Uint256 (its two limbs are below 2 ** 128), the resulting number will have\n//   limbs in the range [0, BASE).\nfunc uint256_to_bigint{range_check_ptr}(x: Uint256) -> (res: BigInt3) {\n    const D1_HIGH_BOUND = BASE ** 2 / RC_BOUND;\n    const D1_LOW_BOUND = RC_BOUND / BASE;\n    let (d1_low, d0) = unsigned_div_rem(x.low, BASE);\n    let (d2, d1_high) = unsigned_div_rem(x.high, D1_HIGH_BOUND);\n    let d1 = d1_high * D1_LOW_BOUND + d1_low;\n    return (res=BigInt3(d0=d0, d1=d1, d2=d2));\n}\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/cairo_secp/bigint3.cairo": "// Represents a big integer defined by:\n//   d0 + BASE * d1 + BASE**2 * d2.\n// Note that the limbs (d_i) are NOT restricted to the range [0, BASE) and in particular they\n// can be negative.\n// In most cases this is used to represent a Secp256k1 or Secp256r1 field element.\nstruct UnreducedBigInt3 {\n    d0: felt,\n    d1: felt,\n    d2: felt,\n}\n\n// Same as UnreducedBigInt3, except that d0, d1 and d2 satisfy the bounds of\n// nondet_bigint3 or are the difference of two values satisfying those bounds.\n// In most cases this is used to represent a Secp256k1 or Secp256r1 field element.\nstruct BigInt3 {\n    d0: felt,\n    d1: felt,\n    d2: felt,\n}\n\n// Same as BigInt3, except the bounds on d0, d1 and d2 are twice as large.\nstruct SumBigInt3 {\n    d0: felt,\n    d1: felt,\n    d2: felt,\n}\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/cairo_secp/constants.cairo": "// Basic definitions for the secp256k1 elliptic curve.\n// The curve is given by the equation:\n//   y^2 = x^3 + 7\n// over the field Z/p for\n//   p = secp256k1_prime = 2 ** 256 - (2 ** 32 + 2 ** 9 + 2 ** 8 + 2 ** 7 + 2 ** 6 + 2 ** 4 + 1).\n// The size of the curve is\n//   n = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141 (prime).\n\n// SECP_REM is defined by the equation:\n//   secp256k1_prime = 2 ** 256 - SECP_REM.\nconst SECP_REM = 2 ** 32 + 2 ** 9 + 2 ** 8 + 2 ** 7 + 2 ** 6 + 2 ** 4 + 1;\n\nconst BASE = 2 ** 86;\n\n// The following constants represent the size of the secp256k1 field:\n//   p = P0 + BASE * P1 + BASE**2 * P2.\nconst P0 = 0x3ffffffffffffefffffc2f;\nconst P1 = 0x3fffffffffffffffffffff;\nconst P2 = 0xfffffffffffffffffffff;\n\n// The following constants represent the size of the secp256k1 curve:\n//   n = N0 + BASE * N1 + BASE**2 * N2.\nconst N0 = 0x8a03bbfd25e8cd0364141;\nconst N1 = 0x3ffffffffffaeabb739abd;\nconst N2 = 0xfffffffffffffffffffff;\n\n// BETA is the free term in the curve equation.\nconst BETA = 7;\n\n// The high and low uint128 parts of SECP_PRIME.\nconst SECP_PRIME_HIGH = 0xffffffffffffffffffffffffffffffff;\nconst SECP_PRIME_LOW = 0xfffffffffffffffffffffffefffffc2f;\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/cairo_secp/ec.cairo": "from starkware.cairo.common.alloc import alloc\nfrom starkware.cairo.common.cairo_secp.bigint import nondet_bigint3\nfrom starkware.cairo.common.cairo_secp.bigint3 import BigInt3, SumBigInt3, UnreducedBigInt3\nfrom starkware.cairo.common.cairo_secp.ec_point import EcPoint\nfrom starkware.cairo.common.cairo_secp.field import (\n    is_zero,\n    unreduced_mul,\n    unreduced_sqr,\n    verify_zero,\n)\nfrom starkware.cairo.common.math import assert_nn_le\nfrom starkware.cairo.common.uint256 import Uint256\n\n// Computes the negation of a point on the elliptic curve, which is a point with the same x value\n// and the negation of the y value. If the point is the zero point, returns the zero point.\n//\n// Arguments:\n//   point - The point to operate on.\n//\n// Returns:\n//   point - The negation of the given point.\nfunc ec_negate{range_check_ptr}(point: EcPoint) -> (point: EcPoint) {\n    %{\n        from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\n        y = pack(ids.point.y, PRIME) % SECP_P\n        # The modulo operation in python always returns a nonnegative number.\n        value = (-y) % SECP_P\n    %}\n    let (minus_y) = nondet_bigint3();\n    verify_zero(\n        UnreducedBigInt3(\n            d0=minus_y.d0 + point.y.d0, d1=minus_y.d1 + point.y.d1, d2=minus_y.d2 + point.y.d2\n        ),\n    );\n\n    return (point=EcPoint(x=point.x, y=minus_y));\n}\n\n// Computes the slope of the elliptic curve at a given point.\n// The slope is used to compute point + point.\n//\n// Arguments:\n//   point - the point to operate on.\n//\n// Returns:\n//   slope - the slope of the curve at point, in BigInt3 representation.\n//\n// Assumption: point != 0.\nfunc compute_doubling_slope{range_check_ptr}(point: EcPoint) -> (slope: BigInt3) {\n    // Note that y cannot be zero: assume that it is, then point = -point, so 2 * point = 0, which\n    // contradicts the fact that the size of the curve is odd.\n    %{\n        from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n        from starkware.python.math_utils import ec_double_slope\n\n        # Compute the slope.\n        x = pack(ids.point.x, PRIME)\n        y = pack(ids.point.y, PRIME)\n        value = slope = ec_double_slope(point=(x, y), alpha=0, p=SECP_P)\n    %}\n    let (slope: BigInt3) = nondet_bigint3();\n\n    let (x_sqr: UnreducedBigInt3) = unreduced_sqr(point.x);\n    let (slope_y: UnreducedBigInt3) = unreduced_mul(slope, point.y);\n\n    verify_zero(\n        UnreducedBigInt3(\n            d0=3 * x_sqr.d0 - 2 * slope_y.d0,\n            d1=3 * x_sqr.d1 - 2 * slope_y.d1,\n            d2=3 * x_sqr.d2 - 2 * slope_y.d2,\n        ),\n    );\n\n    return (slope=slope);\n}\n\n// Computes the slope of the line connecting the two given points.\n// The slope is used to compute point0 + point1.\n//\n// Arguments:\n//   point0, point1 - the points to operate on.\n//\n// Returns:\n//   slope - the slope of the line connecting point0 and point1, in BigInt3 representation.\n//\n// Assumptions:\n// * point0.x != point1.x (mod secp256k1_prime).\n// * point0, point1 != 0.\nfunc compute_slope{range_check_ptr}(point0: EcPoint, point1: EcPoint) -> (slope: BigInt3) {\n    %{\n        from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n        from starkware.python.math_utils import line_slope\n\n        # Compute the slope.\n        x0 = pack(ids.point0.x, PRIME)\n        y0 = pack(ids.point0.y, PRIME)\n        x1 = pack(ids.point1.x, PRIME)\n        y1 = pack(ids.point1.y, PRIME)\n        value = slope = line_slope(point1=(x0, y0), point2=(x1, y1), p=SECP_P)\n    %}\n    let (slope) = nondet_bigint3();\n\n    let x_diff = BigInt3(\n        d0=point0.x.d0 - point1.x.d0, d1=point0.x.d1 - point1.x.d1, d2=point0.x.d2 - point1.x.d2\n    );\n    let (x_diff_slope: UnreducedBigInt3) = unreduced_mul(x_diff, slope);\n\n    verify_zero(\n        UnreducedBigInt3(\n            d0=x_diff_slope.d0 - point0.y.d0 + point1.y.d0,\n            d1=x_diff_slope.d1 - point0.y.d1 + point1.y.d1,\n            d2=x_diff_slope.d2 - point0.y.d2 + point1.y.d2,\n        ),\n    );\n\n    return (slope=slope);\n}\n\n// Computes the addition of a given point to itself.\n//\n// Arguments:\n//   point - the point to operate on.\n//\n// Returns:\n//   res - a point representing point + point.\nfunc ec_double{range_check_ptr}(point: EcPoint) -> (res: EcPoint) {\n    // The zero point.\n    if (point.x.d0 == 0) {\n        if (point.x.d1 == 0) {\n            if (point.x.d2 == 0) {\n                return (res=point);\n            }\n        }\n    }\n\n    let (slope: BigInt3) = compute_doubling_slope(point);\n    let (slope_sqr: UnreducedBigInt3) = unreduced_sqr(slope);\n\n    %{\n        from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\n        slope = pack(ids.slope, PRIME)\n        x = pack(ids.point.x, PRIME)\n        y = pack(ids.point.y, PRIME)\n\n        value = new_x = (pow(slope, 2, SECP_P) - 2 * x) % SECP_P\n    %}\n    let (new_x: BigInt3) = nondet_bigint3();\n\n    %{ value = new_y = (slope * (x - new_x) - y) % SECP_P %}\n    let (new_y: BigInt3) = nondet_bigint3();\n\n    verify_zero(\n        UnreducedBigInt3(\n            d0=slope_sqr.d0 - new_x.d0 - 2 * point.x.d0,\n            d1=slope_sqr.d1 - new_x.d1 - 2 * point.x.d1,\n            d2=slope_sqr.d2 - new_x.d2 - 2 * point.x.d2,\n        ),\n    );\n\n    let (x_diff_slope: UnreducedBigInt3) = unreduced_mul(\n        BigInt3(d0=point.x.d0 - new_x.d0, d1=point.x.d1 - new_x.d1, d2=point.x.d2 - new_x.d2), slope\n    );\n\n    verify_zero(\n        UnreducedBigInt3(\n            d0=x_diff_slope.d0 - point.y.d0 - new_y.d0,\n            d1=x_diff_slope.d1 - point.y.d1 - new_y.d1,\n            d2=x_diff_slope.d2 - point.y.d2 - new_y.d2,\n        ),\n    );\n\n    return (res=EcPoint(new_x, new_y));\n}\n\n// Computes the addition of two given points.\n//\n// Arguments:\n//   point0, point1 - the points to operate on.\n//\n// Returns:\n//   res - the sum of the two points (point0 + point1).\n//\n// Assumption: point0.x != point1.x (however, point0 = point1 = 0 is allowed).\n// Note that this means that the function cannot be used if point0 = point1 != 0\n// (use ec_double() in this case) or point0 = -point1 != 0 (the result is 0 in this case).\nfunc fast_ec_add{range_check_ptr}(point0: EcPoint, point1: EcPoint) -> (res: EcPoint) {\n    // Check whether point0 is the zero point.\n    if (point0.x.d0 == 0) {\n        if (point0.x.d1 == 0) {\n            if (point0.x.d2 == 0) {\n                return (res=point1);\n            }\n        }\n    }\n\n    // Check whether point1 is the zero point.\n    if (point1.x.d0 == 0) {\n        if (point1.x.d1 == 0) {\n            if (point1.x.d2 == 0) {\n                return (res=point0);\n            }\n        }\n    }\n\n    let (slope: BigInt3) = compute_slope(point0, point1);\n    let (slope_sqr: UnreducedBigInt3) = unreduced_sqr(slope);\n\n    %{\n        from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\n        slope = pack(ids.slope, PRIME)\n        x0 = pack(ids.point0.x, PRIME)\n        x1 = pack(ids.point1.x, PRIME)\n        y0 = pack(ids.point0.y, PRIME)\n\n        value = new_x = (pow(slope, 2, SECP_P) - x0 - x1) % SECP_P\n    %}\n    let (new_x: BigInt3) = nondet_bigint3();\n\n    %{ value = new_y = (slope * (x0 - new_x) - y0) % SECP_P %}\n    let (new_y: BigInt3) = nondet_bigint3();\n\n    verify_zero(\n        UnreducedBigInt3(\n            d0=slope_sqr.d0 - new_x.d0 - point0.x.d0 - point1.x.d0,\n            d1=slope_sqr.d1 - new_x.d1 - point0.x.d1 - point1.x.d1,\n            d2=slope_sqr.d2 - new_x.d2 - point0.x.d2 - point1.x.d2,\n        ),\n    );\n\n    let (x_diff_slope: UnreducedBigInt3) = unreduced_mul(\n        BigInt3(d0=point0.x.d0 - new_x.d0, d1=point0.x.d1 - new_x.d1, d2=point0.x.d2 - new_x.d2),\n        slope,\n    );\n\n    verify_zero(\n        UnreducedBigInt3(\n            d0=x_diff_slope.d0 - point0.y.d0 - new_y.d0,\n            d1=x_diff_slope.d1 - point0.y.d1 - new_y.d1,\n            d2=x_diff_slope.d2 - point0.y.d2 - new_y.d2,\n        ),\n    );\n\n    return (res=EcPoint(new_x, new_y));\n}\n\n// Same as fast_ec_add, except that the cases point0 = +/-point1 are supported.\nfunc ec_add{range_check_ptr}(point0: EcPoint, point1: EcPoint) -> (res: EcPoint) {\n    let x_diff = SumBigInt3(\n        d0=point0.x.d0 - point1.x.d0, d1=point0.x.d1 - point1.x.d1, d2=point0.x.d2 - point1.x.d2\n    );\n    let (same_x: felt) = is_zero(x_diff);\n    if (same_x == 0) {\n        // point0.x != point1.x so we can use fast_ec_add.\n        return fast_ec_add(point0, point1);\n    }\n\n    // We have point0.x = point1.x. This implies point0.y = +/-point1.y.\n    // Check whether point0.y = -point1.y.\n    let y_sum = SumBigInt3(\n        d0=point0.y.d0 + point1.y.d0, d1=point0.y.d1 + point1.y.d1, d2=point0.y.d2 + point1.y.d2\n    );\n    let (opposite_y: felt) = is_zero(y_sum);\n    if (opposite_y != 0) {\n        // point0.y = -point1.y.\n        // Note that the case point0 = point1 = 0 falls into this branch as well.\n        let ZERO_POINT = EcPoint(BigInt3(0, 0, 0), BigInt3(0, 0, 0));\n        return (res=ZERO_POINT);\n    } else {\n        // point0.y = point1.y.\n        return ec_double(point0);\n    }\n}\n\n// Given (1) an integer m in the range [0, 250), (2) a scalar, and (3) a point on the curve,\n// verifies that 0 <= scalar < 2**m and returns (2**m * point, scalar * point).\nfunc ec_mul_inner{range_check_ptr}(point: EcPoint, scalar: felt, m: felt) -> (\n    pow2: EcPoint, res: EcPoint\n) {\n    if (m == 0) {\n        with_attr error_message(\"Too large scalar\") {\n            assert scalar = 0;\n        }\n        let ZERO_POINT = EcPoint(BigInt3(0, 0, 0), BigInt3(0, 0, 0));\n        return (pow2=point, res=ZERO_POINT);\n    }\n\n    alloc_locals;\n    let (double_point: EcPoint) = ec_double(point);\n    %{ memory[ap] = (ids.scalar % PRIME) % 2 %}\n    jmp odd if [ap] != 0, ap++;\n    return ec_mul_inner(point=double_point, scalar=scalar / 2, m=m - 1);\n\n    odd:\n    let (local inner_pow2: EcPoint, inner_res: EcPoint) = ec_mul_inner(\n        point=double_point, scalar=(scalar - 1) / 2, m=m - 1\n    );\n    // Here inner_res = (scalar - 1) / 2 * double_point = (scalar - 1) * point.\n    // Assume point != 0 and that inner_res = +/-point. We obtain (scalar - 1) * point = +/-point =>\n    // scalar - 1 = +/-1 (mod N) => scalar = 0 or 2 (mod N).\n    // By induction, we know that (scalar - 1) / 2 must be in the range [0, 2**(m-1)),\n    // so scalar is an odd number in the range [0, 2**m), and we get a contradiction.\n    let (res: EcPoint) = fast_ec_add(point0=point, point1=inner_res);\n    return (pow2=inner_pow2, res=res);\n}\n\n// Given a point and a 256-bit scalar, returns scalar * point.\nfunc ec_mul{range_check_ptr}(point: EcPoint, scalar: BigInt3) -> (res: EcPoint) {\n    alloc_locals;\n    let (pow2_0: EcPoint, local res0: EcPoint) = ec_mul_inner(point, scalar.d0, 86);\n    let (pow2_1: EcPoint, local res1: EcPoint) = ec_mul_inner(pow2_0, scalar.d1, 86);\n    let (_, local res2: EcPoint) = ec_mul_inner(pow2_1, scalar.d2, 84);\n    let (res: EcPoint) = ec_add(res0, res1);\n    let (res: EcPoint) = ec_add(res, res2);\n    return (res=res);\n}\n\n// Given a point and a 256-bit scalar, returns scalar * point.\nfunc ec_mul_by_uint256{range_check_ptr}(point: EcPoint, scalar: Uint256) -> (res: EcPoint) {\n    alloc_locals;\n    let (local table: EcPoint*) = alloc();\n    build_ec_mul_table(point, table);\n\n    local first_nibble;\n    local last_nibble;\n    %{\n        num = (ids.scalar.high << 128) + ids.scalar.low\n        nibbles = [(num >> i) & 0xf for i in range(0, 256, 4)]\n        ids.first_nibble = nibbles.pop()\n        ids.last_nibble = nibbles[0]\n    %}\n    assert_nn_le(first_nibble, 15);\n    let (res, scalar_high) = fast_ec_mul_inner(table, table[first_nibble], first_nibble, 124);\n    assert scalar_high = scalar.high;\n\n    // The last addition must be done with `ec_add` rather then `fast_ec_add` so we do it\n    // separately from the rest of the additions in `fast_ec_mul_inner`.\n    let (res, scalar_low) = fast_ec_mul_inner(table, res, 0, 124);\n    assert scalar.low = 16 * scalar_low + last_nibble;\n    assert_nn_le(last_nibble, 15);\n    let (res) = ec_double(res);\n    let (res) = ec_double(res);\n    let (res) = ec_double(res);\n    let (res) = ec_double(res);\n    return ec_add(res, table[last_nibble]);\n}\n\n// Given a point on the curve computes a table of size 16 where table[i] = i * point.\n// The table is allocated in the caller to avoid local variables in this function.\nfunc build_ec_mul_table{range_check_ptr}(point: EcPoint, table: EcPoint*) {\n    assert table[0] = EcPoint(BigInt3(0, 0, 0), BigInt3(0, 0, 0));\n    assert table[1] = point;\n    let (t2) = ec_double(point);\n    assert table[2] = t2;\n    let (t3) = fast_ec_add(t2, point);\n    assert table[3] = t3;\n    let (t4) = fast_ec_add(t3, point);\n    assert table[4] = t4;\n    let (t5) = fast_ec_add(t4, point);\n    assert table[5] = t5;\n    let (t6) = fast_ec_add(t5, point);\n    assert table[6] = t6;\n    let (t7) = fast_ec_add(t6, point);\n    assert table[7] = t7;\n    let (t8) = fast_ec_add(t7, point);\n    assert table[8] = t8;\n    let (t9) = fast_ec_add(t8, point);\n    assert table[9] = t9;\n    let (t10) = fast_ec_add(t9, point);\n    assert table[10] = t10;\n    let (t11) = fast_ec_add(t10, point);\n    assert table[11] = t11;\n    let (t12) = fast_ec_add(t11, point);\n    assert table[12] = t12;\n    let (t13) = fast_ec_add(t12, point);\n    assert table[13] = t13;\n    let (t14) = fast_ec_add(t13, point);\n    assert table[14] = t14;\n    let (t15) = fast_ec_add(t14, point);\n    assert table[15] = t15;\n\n    return ();\n}\n\n// An inner helper function for ec_mul_by_uint256.\n// The function gets a table (see `build_ec_mul_table`) for some point `P`, a point `point` and two\n// scalars 'scalar' and 'm' and a hint variable nibbles (represented as a list of nibbles where the\n// last one is the most significant).\n// It verifies that 0 <= nibbles < 2**m.\n// It returns a point 'point_out' and a scalar 'scalar_out' such that:\n//   scalar_out = scalar * 2**m + nibbles,\n//   point_out = point * 2**m + P * nibbles.\n// The caller must add a constraint that `scalar_out` was constructed correctly.\n// Assumption: `point = i * P` for some `0 <= i < 2**248`.\nfunc fast_ec_mul_inner{range_check_ptr}(table: EcPoint*, point: EcPoint, scalar: felt, m: felt) -> (\n    point_out: EcPoint, scalar_out: felt\n) {\n    alloc_locals;\n    if (m == 0) {\n        return (point, scalar);\n    }\n\n    // Compute 16 * point.\n    let (point) = ec_double(point);\n    let (point) = ec_double(point);\n    let (point) = ec_double(point);\n    let (point) = ec_double(point);\n\n    local nibble = nondet %{ nibbles.pop() %};\n    assert_nn_le(nibble, 15);\n\n    // Note that we can use `fast_ec_add` instead of `ec_add`:\n    // Assume that `16 * point = +/- nibble * P` and `nibble * P != 0`.\n    // This implies `16 * i + nibble = 0 (mod N)` or `16 * i - nibble = 0 (mod N)`\n    // where `N` is the size of the elliptic curve.\n    // Since `i < 2**248`, `16 * i < 2**252` and so one of the equalities must be true as integers.\n    // But `16 * i + nibble > 0` and `16 * i != nibble` since `1 <= nibble <= 15`.\n    let (point) = fast_ec_add(point, table[nibble]);\n\n    return fast_ec_mul_inner(table=table, point=point, scalar=16 * scalar + nibble, m=m - 4);\n}\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/cairo_secp/ec_point.cairo": "from starkware.cairo.common.cairo_secp.bigint3 import BigInt3\n\n// Represents a point on the secp256k1 elliptic curve.\n// The zero point is represented as a point with x = 0 (there is no point on the curve with a zero\n// x value).\n// x and y satisfy the bounds of nondet_bigint3 for the relevant curve.\nstruct EcPoint {\n    x: BigInt3,\n    y: BigInt3,\n}\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/cairo_secp/field.cairo": "from starkware.cairo.common.cairo_secp.bigint import nondet_bigint3\nfrom starkware.cairo.common.cairo_secp.bigint3 import BigInt3, SumBigInt3, UnreducedBigInt3\nfrom starkware.cairo.common.cairo_secp.constants import BASE, P0, P1, P2, SECP_REM\nfrom starkware.cairo.common.math import assert_nn_le\n\n// Computes the multiplication of two big integers, given in BigInt3 representation, modulo the\n// secp256k1 prime.\n//\n// Arguments:\n//   a, b - the two BigInt3 to operate on.\n//\n// Returns:\n//   a * b in an UnreducedBigInt3 representation (the returned limbs may be above 3 * BASE).\n//\n// If each of the input limbs is in the range (-x, x), the result's limbs are guaranteed to be\n// in the range (-x**2 * (2 ** 35.01), x**2 * (2 ** 35.01)) since log(8 * SECP_REM + 1) < 35.01.\n//\n// This means that if unreduced_mul is called on the result of nondet_bigint3, or the difference\n// between two such results, we have:\n//   Soundness guarantee: the limbs are in the range (-2**210.18, 2**210.18).\n//   Completeness guarantee: the limbs are in the range (-2**207.01, 2**207.01).\nfunc unreduced_mul(a: BigInt3, b: BigInt3) -> (res_low: UnreducedBigInt3) {\n    // The result of the product is:\n    //   sum_{i, j} a.d_i * b.d_j * BASE**(i + j)\n    // Since we are computing it mod secp256k1_prime, we replace the term\n    //   a.d_i * b.d_j * BASE**(i + j)\n    // where i + j >= 3 with\n    //   a.d_i * b.d_j * BASE**(i + j - 3) * 4 * SECP_REM\n    // since BASE ** 3 = 4 * SECP_REM (mod secp256k1_prime).\n    return (\n        UnreducedBigInt3(\n            d0=a.d0 * b.d0 + (a.d1 * b.d2 + a.d2 * b.d1) * (4 * SECP_REM),\n            d1=a.d0 * b.d1 + a.d1 * b.d0 + (a.d2 * b.d2) * (4 * SECP_REM),\n            d2=a.d0 * b.d2 + a.d1 * b.d1 + a.d2 * b.d0,\n        ),\n    );\n}\n\n// Computes the square of a big integer, given in BigInt3 representation, modulo the\n// secp256k1 prime.\n//\n// Has the same guarantees as in unreduced_mul(a, a).\nfunc unreduced_sqr(a: BigInt3) -> (res_low: UnreducedBigInt3) {\n    tempvar twice_d0 = a.d0 * 2;\n    return (\n        UnreducedBigInt3(\n            d0=a.d0 * a.d0 + (a.d1 * a.d2) * (2 * 4 * SECP_REM),\n            d1=twice_d0 * a.d1 + (a.d2 * a.d2) * (4 * SECP_REM),\n            d2=twice_d0 * a.d2 + a.d1 * a.d1,\n        ),\n    );\n}\n\n// Verifies that the given unreduced value is equal to zero modulo the secp256k1 prime.\n//\n// Completeness assumption: val's limbs are in the range (-2**210.99, 2**210.99).\n// Soundness assumption: val's limbs are in the range (-2**250, 2**250).\nfunc verify_zero{range_check_ptr}(val: UnreducedBigInt3) {\n    let q = [ap];\n    %{\n        from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\n        q, r = divmod(pack(ids.val, PRIME), SECP_P)\n        assert r == 0, f\"verify_zero: Invalid input {ids.val.d0, ids.val.d1, ids.val.d2}.\"\n        ids.q = q % PRIME\n    %}\n    let q_biased = [ap + 1];\n    q_biased = q + 2 ** 127, ap++;\n    [range_check_ptr] = q_biased, ap++;\n    // This implies that q is in the range [-2**127, 2**127).\n\n    tempvar r1 = (val.d0 + q * SECP_REM) / BASE;\n    assert [range_check_ptr + 1] = r1 + 2 ** 127;\n    // This implies that r1 is in the range [-2**127, 2**127).\n    // Therefore, r1 * BASE is in the range [-2**213, 2**213).\n    // By the soundness assumption, val.d0 is in the range (-2**250, 2**250).\n    // This implies that r1 * BASE = val.d0 + q * SECP_REM (as integers).\n\n    tempvar r2 = (val.d1 + r1) / BASE;\n    assert [range_check_ptr + 2] = r2 + 2 ** 127;\n    // Similarly, this implies that r2 * BASE = val.d1 + r1 (as integers).\n    // Therefore, r2 * BASE**2 = val.d1 * BASE + r1 * BASE.\n\n    assert val.d2 = q * (BASE / 4) - r2;\n    // Similarly, this implies that q * BASE / 4 = val.d2 + r2 (as integers).\n    // Therefore,\n    //   q * BASE**3 / 4 = val.d2 * BASE**2 + r2 * BASE ** 2 =\n    //   val.d2 * BASE**2 + val.d1 * BASE + r1 * BASE =\n    //   val.d2 * BASE**2 + val.d1 * BASE + val.d0 + q * SECP_REM =\n    //   val + q * SECP_REM.\n    // Hence, val = q * (BASE**3 / 4 - SECP_REM) = q * (2**256 - SECP_REM) = q * secp256k1_prime.\n\n    let range_check_ptr = range_check_ptr + 3;\n    return ();\n}\n\n// Returns 1 if x == 0 (mod secp256k1_prime), and 0 otherwise.\n//\n// Completeness assumption: x's limbs are in the range (-BASE, 2*BASE).\n// Soundness assumption: x's limbs are in the range (-2**107.49, 2**107.49).\nfunc is_zero{range_check_ptr}(x: SumBigInt3) -> (res: felt) {\n    %{\n        from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\n        x = pack(ids.x, PRIME) % SECP_P\n    %}\n    if (nondet %{ x == 0 %} != 0) {\n        verify_zero(UnreducedBigInt3(d0=x.d0, d1=x.d1, d2=x.d2));\n        return (res=1);\n    }\n\n    %{\n        from starkware.cairo.common.cairo_secp.secp_utils import SECP_P\n        from starkware.python.math_utils import div_mod\n\n        value = x_inv = div_mod(1, x, SECP_P)\n    %}\n    let (x_inv) = nondet_bigint3();\n    // Note that we pass `SumBigInt3` to `unreduced_mul` so the bounds on\n    // `x_x_inv` are (-2**211.18, 2**211.18).\n    let (x_x_inv) = unreduced_mul(BigInt3(d0=x.d0, d1=x.d1, d2=x.d2), x_inv);\n\n    // Check that x * x_inv = 1 to verify that x != 0.\n    verify_zero(UnreducedBigInt3(d0=x_x_inv.d0 - 1, d1=x_x_inv.d1, d2=x_x_inv.d2));\n    return (res=0);\n}\n\n// Receives an unreduced number, and returns a number that is equal to the original number mod\n// SECP_P and in reduced form.\n//\n// Completeness assumption: x's limbs are in the range (-2**210.99, 2**210.99).\n// Soundness assumption: x's limbs are in the range (-2**249.99, 2**249.99).\n//\n// Completeness guarantee (honest prover): the value is in reduced form and in particular,\n// each limb is in the range [0, BASE).\n// Soundness guarantee: each limb is in the range [0, 3 * BASE).\nfunc reduce{range_check_ptr}(x: UnreducedBigInt3) -> (reduced_x: BigInt3) {\n    %{\n        from starkware.cairo.common.cairo_secp.secp_utils import SECP_P, pack\n\n        value = pack(ids.x, PRIME) % SECP_P\n    %}\n    let (reduced_x: BigInt3) = nondet_bigint3();\n\n    verify_zero(\n        UnreducedBigInt3(d0=x.d0 - reduced_x.d0, d1=x.d1 - reduced_x.d1, d2=x.d2 - reduced_x.d2)\n    );\n    return (reduced_x=reduced_x);\n}\n\n// Verifies that val is in the range [0, p) (where p is secp256k1 prime) and that the limbs of\n// val are in the range [0, BASE). This guarantees unique representation.\nfunc validate_reduced_field_element{range_check_ptr}(val: BigInt3) {\n    assert_nn_le(val.d2, P2);\n    assert_nn_le(val.d1, BASE - 1);\n    assert_nn_le(val.d0, BASE - 1);\n\n    if (val.d2 == P2) {\n        if (val.d1 == P1) {\n            assert_nn_le(val.d0, P0 - 1);\n            return ();\n        }\n        assert_nn_le(val.d1, P1 - 1);\n        return ();\n    }\n    return ();\n}\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/ec_point.cairo": "// Represents a point on an elliptic curve.\nstruct EcPoint {\n    x: felt,\n    y: felt,\n}\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/keccak_state.cairo": "// Represents 1600 bits of a Keccak state (8 felts each containing 200 bits).\nstruct KeccakBuiltinState {\n    s0: felt,\n    s1: felt,\n    s2: felt,\n    s3: felt,\n    s4: felt,\n    s5: felt,\n    s6: felt,\n    s7: felt,\n}\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/math.cairo": "from starkware.cairo.common.bool import FALSE, TRUE\n\n// Inline functions with no locals.\n\n// Verifies that value != 0. The proof will fail otherwise.\nfunc assert_not_zero(value) {\n    %{\n        from starkware.cairo.common.math_utils import assert_integer\n        assert_integer(ids.value)\n        assert ids.value % PRIME != 0, f'assert_not_zero failed: {ids.value} = 0.'\n    %}\n    if (value == 0) {\n        // If value == 0, add an unsatisfiable requirement.\n        value = 1;\n    }\n\n    return ();\n}\n\n// Verifies that a != b. The proof will fail otherwise.\nfunc assert_not_equal(a, b) {\n    %{\n        from starkware.cairo.lang.vm.relocatable import RelocatableValue\n        both_ints = isinstance(ids.a, int) and isinstance(ids.b, int)\n        both_relocatable = (\n            isinstance(ids.a, RelocatableValue) and isinstance(ids.b, RelocatableValue) and\n            ids.a.segment_index == ids.b.segment_index)\n        assert both_ints or both_relocatable, \\\n            f'assert_not_equal failed: non-comparable values: {ids.a}, {ids.b}.'\n        assert (ids.a - ids.b) % PRIME != 0, f'assert_not_equal failed: {ids.a} = {ids.b}.'\n    %}\n    if (a == b) {\n        // If a == b, add an unsatisfiable requirement.\n        a = a + 1;\n    }\n\n    return ();\n}\n\n// Verifies that a >= 0 (or more precisely 0 <= a < RANGE_CHECK_BOUND).\nfunc assert_nn{range_check_ptr}(a) {\n    %{\n        from starkware.cairo.common.math_utils import assert_integer\n        assert_integer(ids.a)\n        assert 0 <= ids.a % PRIME < range_check_builtin.bound, f'a = {ids.a} is out of range.'\n    %}\n    a = [range_check_ptr];\n    let range_check_ptr = range_check_ptr + 1;\n    return ();\n}\n\n// Verifies that a <= b (or more precisely 0 <= b - a < RANGE_CHECK_BOUND).\nfunc assert_le{range_check_ptr}(a, b) {\n    assert_nn(b - a);\n    return ();\n}\n\n// Verifies that a <= b - 1 (or more precisely 0 <= b - 1 - a < RANGE_CHECK_BOUND).\nfunc assert_lt{range_check_ptr}(a, b) {\n    assert_le(a, b - 1);\n    return ();\n}\n\n// Verifies that 0 <= a <= b.\n//\n// Prover assumption: b < RANGE_CHECK_BOUND.\n//\n// This function is still sound without the prover assumptions. In that case, it is guaranteed\n// that a < RANGE_CHECK_BOUND and b < 2 * RANGE_CHECK_BOUND.\nfunc assert_nn_le{range_check_ptr}(a, b) {\n    assert_nn(a);\n    assert_le(a, b);\n    return ();\n}\n\n// Asserts that value is in the range [lower, upper).\n// Or more precisely:\n// (0 <= value - lower < RANGE_CHECK_BOUND) and (0 <= upper - 1 - value < RANGE_CHECK_BOUND).\n//\n// Prover assumption: 0 <= upper - lower <= RANGE_CHECK_BOUND.\nfunc assert_in_range{range_check_ptr}(value, lower, upper) {\n    assert_le(lower, value);\n    assert_le(value, upper - 1);\n    return ();\n}\n\n// Asserts that 'value' is in the range [0, 2**250).\n@known_ap_change\nfunc assert_250_bit{range_check_ptr}(value) {\n    const UPPER_BOUND = 2 ** 250;\n    const SHIFT = 2 ** 128;\n    const HIGH_BOUND = UPPER_BOUND / SHIFT;\n\n    let low = [range_check_ptr];\n    let high = [range_check_ptr + 1];\n\n    %{\n        from starkware.cairo.common.math_utils import as_int\n\n        # Correctness check.\n        value = as_int(ids.value, PRIME) % PRIME\n        assert value < ids.UPPER_BOUND, f'{value} is outside of the range [0, 2**250).'\n\n        # Calculation for the assertion.\n        ids.high, ids.low = divmod(ids.value, ids.SHIFT)\n    %}\n\n    assert [range_check_ptr + 2] = HIGH_BOUND - 1 - high;\n\n    // The assert below guarantees that\n    //   value = high * SHIFT + low <= (HIGH_BOUND - 1) * SHIFT + 2**128 - 1 =\n    //   HIGH_BOUND * SHIFT - SHIFT + SHIFT - 1 = 2**250 - 1.\n    assert value = high * SHIFT + low;\n\n    let range_check_ptr = range_check_ptr + 3;\n    return ();\n}\n\n// Splits the unsigned integer lift of a field element into the higher 128 bit and lower 128 bit.\n// The unsigned integer lift is the unique integer in the range [0, PRIME) that represents the field\n// element.\n// For example, if value=17 * 2^128 + 8, then high=17 and low=8.\n@known_ap_change\nfunc split_felt{range_check_ptr}(value) -> (high: felt, low: felt) {\n    // Note: the following code works because PRIME - 1 is divisible by 2**128.\n    const MAX_HIGH = (-1) / 2 ** 128;\n    const MAX_LOW = 0;\n\n    // Guess the low and high parts of the integer.\n    let low = [range_check_ptr];\n    let high = [range_check_ptr + 1];\n    let range_check_ptr = range_check_ptr + 2;\n\n    %{\n        from starkware.cairo.common.math_utils import assert_integer\n        assert ids.MAX_HIGH < 2**128 and ids.MAX_LOW < 2**128\n        assert PRIME - 1 == ids.MAX_HIGH * 2**128 + ids.MAX_LOW\n        assert_integer(ids.value)\n        ids.low = ids.value & ((1 << 128) - 1)\n        ids.high = ids.value >> 128\n    %}\n    assert value = high * (2 ** 128) + low;\n    if (high == MAX_HIGH) {\n        assert_le(low, MAX_LOW);\n    } else {\n        assert_le(high, MAX_HIGH - 1);\n    }\n    return (high=high, low=low);\n}\n\n// Asserts that the unsigned integer lift (as a number in the range [0, PRIME)) of a is lower than\n// or equal to that of b.\n@known_ap_change\nfunc assert_le_felt{range_check_ptr}(a, b) {\n    // ceil(PRIME / 3 / 2 ** 128).\n    const PRIME_OVER_3_HIGH = 0x2aaaaaaaaaaaab05555555555555556;\n    // ceil(PRIME / 2 / 2 ** 128).\n    const PRIME_OVER_2_HIGH = 0x4000000000000088000000000000001;\n    // The numbers [0, a, b, PRIME - 1] should be ordered. To prove that, we show that two of the\n    // 3 arcs {0 -> a, a -> b, b -> PRIME - 1} are small:\n    //   One is less than PRIME / 3 + 2 ** 129.\n    //   Another is less than PRIME / 2 + 2 ** 129.\n    // Since the sum of the lengths of these two arcs is less than PRIME, there is no wrap-around.\n    %{\n        import itertools\n\n        from starkware.cairo.common.math_utils import assert_integer\n        assert_integer(ids.a)\n        assert_integer(ids.b)\n        a = ids.a % PRIME\n        b = ids.b % PRIME\n        assert a <= b, f'a = {a} is not less than or equal to b = {b}.'\n\n        # Find an arc less than PRIME / 3, and another less than PRIME / 2.\n        lengths_and_indices = [(a, 0), (b - a, 1), (PRIME - 1 - b, 2)]\n        lengths_and_indices.sort()\n        assert lengths_and_indices[0][0] <= PRIME // 3 and lengths_and_indices[1][0] <= PRIME // 2\n        excluded = lengths_and_indices[2][1]\n\n        memory[ids.range_check_ptr + 1], memory[ids.range_check_ptr + 0] = (\n            divmod(lengths_and_indices[0][0], ids.PRIME_OVER_3_HIGH))\n        memory[ids.range_check_ptr + 3], memory[ids.range_check_ptr + 2] = (\n            divmod(lengths_and_indices[1][0], ids.PRIME_OVER_2_HIGH))\n    %}\n    // Guess two arc lengths.\n    tempvar arc_short = [range_check_ptr] + [range_check_ptr + 1] * PRIME_OVER_3_HIGH;\n    tempvar arc_long = [range_check_ptr + 2] + [range_check_ptr + 3] * PRIME_OVER_2_HIGH;\n    let range_check_ptr = range_check_ptr + 4;\n\n    // First, choose which arc to exclude from {0 -> a, a -> b, b -> PRIME - 1}.\n    // Then, to compare the set of two arc lengths, compare their sum and product.\n    let arc_sum = arc_short + arc_long;\n    let arc_prod = arc_short * arc_long;\n\n    // Exclude \"0 -> a\".\n    %{ memory[ap] = 1 if excluded != 0 else 0 %}\n    jmp skip_exclude_a if [ap] != 0, ap++;\n    assert arc_sum = (-1) - a;\n    assert arc_prod = (a - b) * (1 + b);\n    return ();\n\n    // Exclude \"a -> b\".\n    skip_exclude_a:\n    %{ memory[ap] = 1 if excluded != 1 else 0 %}\n    jmp skip_exclude_b_minus_a if [ap] != 0, ap++;\n    tempvar m1mb = (-1) - b;\n    assert arc_sum = a + m1mb;\n    assert arc_prod = a * m1mb;\n    return ();\n\n    // Exclude \"b -> PRIME - 1\".\n    skip_exclude_b_minus_a:\n    %{ assert excluded == 2 %}\n    assert arc_sum = b;\n    assert arc_prod = a * (b - a);\n    ap += 2;\n    return ();\n}\n\n// Asserts that the unsigned integer lift (as a number in the range [0, PRIME)) of a is lower than\n// that of b.\n@known_ap_change\nfunc assert_lt_felt{range_check_ptr}(a, b) {\n    %{\n        from starkware.cairo.common.math_utils import assert_integer\n        assert_integer(ids.a)\n        assert_integer(ids.b)\n        assert (ids.a % PRIME) < (ids.b % PRIME), \\\n            f'a = {ids.a % PRIME} is not less than b = {ids.b % PRIME}.'\n    %}\n    if (a == b) {\n        // If a == b, add an unsatisfiable requirement.\n        a = a + 1;\n    }\n    assert_le_felt(a, b);\n    return ();\n}\n\n// Returns the absolute value of value.\n// Prover asumption: -rc_bound < value < rc_bound.\n@known_ap_change\nfunc abs_value{range_check_ptr}(value) -> felt {\n    tempvar is_positive: felt;\n    %{\n        from starkware.cairo.common.math_utils import is_positive\n        ids.is_positive = 1 if is_positive(\n            value=ids.value, prime=PRIME, rc_bound=range_check_builtin.bound) else 0\n    %}\n    if (is_positive == 0) {\n        tempvar new_range_check_ptr = range_check_ptr + 1;\n        tempvar abs_value = value * (-1);\n        [range_check_ptr] = abs_value;\n        let range_check_ptr = new_range_check_ptr;\n        return abs_value;\n    } else {\n        [range_check_ptr] = value;\n        let range_check_ptr = range_check_ptr + 1;\n        return value;\n    }\n}\n\n// Returns the sign of value: -1, 0 or 1.\n// Prover asumption: -rc_bound < value < rc_bound.\n@known_ap_change\nfunc sign{range_check_ptr}(value) -> felt {\n    if (value == 0) {\n        ap += 2;\n        return 0;\n    }\n\n    tempvar is_positive: felt;\n    %{\n        from starkware.cairo.common.math_utils import is_positive\n        ids.is_positive = 1 if is_positive(\n            value=ids.value, prime=PRIME, rc_bound=range_check_builtin.bound) else 0\n    %}\n    if (is_positive == 0) {\n        assert [range_check_ptr] = value * (-1);\n        let range_check_ptr = range_check_ptr + 1;\n        return -1;\n    } else {\n        ap += 1;\n        [range_check_ptr] = value;\n        let range_check_ptr = range_check_ptr + 1;\n        return 1;\n    }\n}\n\n// Returns q and r such that:\n//  0 <= q < rc_bound, 0 <= r < div and value = q * div + r.\n//\n// Assumption: 0 < div <= PRIME / rc_bound.\n// Prover assumption: value / div < rc_bound.\n//\n// The value of div is restricted to make sure there is no overflow.\n// q * div + r < (q + 1) * div <= rc_bound * (PRIME / rc_bound) = PRIME.\nfunc unsigned_div_rem{range_check_ptr}(value, div) -> (q: felt, r: felt) {\n    let r = [range_check_ptr];\n    let q = [range_check_ptr + 1];\n    let range_check_ptr = range_check_ptr + 2;\n    %{\n        from starkware.cairo.common.math_utils import assert_integer\n        assert_integer(ids.div)\n        assert 0 < ids.div <= PRIME // range_check_builtin.bound, \\\n            f'div={hex(ids.div)} is out of the valid range.'\n        ids.q, ids.r = divmod(ids.value, ids.div)\n    %}\n    assert_le(r, div - 1);\n\n    assert value = q * div + r;\n    return (q, r);\n}\n\n// Returns q and r such that. -bound <= q < bound, 0 <= r < div and value = q * div + r.\n// value < PRIME / 2 is considered positive and value > PRIME / 2 is considered negative.\n//\n// Assumptions:\n//   0 < div <= PRIME / (rc_bound)\n//   bound <= rc_bound / 2.\n// Prover assumption:   -bound <= value / div < bound.\n//\n// The values of div and bound are restricted to make sure there is no overflow.\n// q * div + r <  (q + 1) * div <=  rc_bound / 2 * (PRIME / rc_bound)\n// q * div + r >=  q * div      >= -rc_bound / 2 * (PRIME / rc_bound).\nfunc signed_div_rem{range_check_ptr}(value, div, bound) -> (q: felt, r: felt) {\n    let r = [range_check_ptr];\n    let biased_q = [range_check_ptr + 1];  // == q + bound.\n    let range_check_ptr = range_check_ptr + 2;\n    %{\n        from starkware.cairo.common.math_utils import as_int, assert_integer\n\n        assert_integer(ids.div)\n        assert 0 < ids.div <= PRIME // range_check_builtin.bound, \\\n            f'div={hex(ids.div)} is out of the valid range.'\n\n        assert_integer(ids.bound)\n        assert ids.bound <= range_check_builtin.bound // 2, \\\n            f'bound={hex(ids.bound)} is out of the valid range.'\n\n        int_value = as_int(ids.value, PRIME)\n        q, ids.r = divmod(int_value, ids.div)\n\n        assert -ids.bound <= q < ids.bound, \\\n            f'{int_value} / {ids.div} = {q} is out of the range [{-ids.bound}, {ids.bound}).'\n\n        ids.biased_q = q + ids.bound\n    %}\n    let q = biased_q - bound;\n    assert value = q * div + r;\n    assert_le(r, div - 1);\n    assert_le(biased_q, 2 * bound - 1);\n    return (q, r);\n}\n\n// Computes value / div as integers and fails if value is not divisible by div.\n// Namely, verifies that 1 <= div < PRIME / rc_bound\n// and returns q such that:\n//   0 <= q < rc_bound and q = value / div.\nfunc safe_div{range_check_ptr}(value: felt, div: felt) -> felt {\n    // floor(PRIME / 2 ** 128).\n    const PRIME_OVER_RC_BOUND = 0x8000000000000110000000000000000;\n    assert [range_check_ptr] = div - 1;\n    assert [range_check_ptr + 1] = div + (2 ** 128 - PRIME_OVER_RC_BOUND);\n    // Prepare the result at the end of the stack.\n    let q = [ap + 1];\n    q = value / div;\n    tempvar range_check_ptr = range_check_ptr + 3;\n    [range_check_ptr - 1] = q, ap++;\n    static_assert &q + 1 == ap;\n    return q;\n}\n\n// Computes first * second if there is no overflow.\n// Namely, returns the product of first and second if:\n//   0 <= first < rc_bound and 0 <= second < PRIME / rc_bound\n// and fails otherwise.\nfunc safe_mult{range_check_ptr}(first: felt, second: felt) -> felt {\n    // floor(PRIME / 2 ** 128).\n    const PRIME_OVER_RC_BOUND = 0x8000000000000110000000000000000;\n    assert [range_check_ptr] = first;\n    assert [range_check_ptr + 1] = second;\n    assert [range_check_ptr + 2] = second + (2 ** 128 - PRIME_OVER_RC_BOUND);\n    let range_check_ptr = range_check_ptr + 3;\n    return first * second;\n}\n\n// Splits the given (unsigned) value into n \"limbs\", where each limb is in the range [0, bound),\n// as follows:\n//   value = x[0] + x[1] * base + x[2] * base**2 + ... + x[n - 1] * base**(n - 1).\n// bound must be less than the range check bound (2**128).\n// Note that bound may be smaller than base, in which case the function will fail if there is a\n// limb which is >= bound.\n// Assumptions:\n//   1 < bound <= base\n//   base**n < field characteristic.\nfunc split_int{range_check_ptr}(value, n, base, bound, output: felt*) {\n    if (n == 0) {\n        %{ assert ids.value == 0, 'split_int(): value is out of range.' %}\n        assert value = 0;\n        return ();\n    }\n\n    %{\n        memory[ids.output] = res = (int(ids.value) % PRIME) % ids.base\n        assert res < ids.bound, f'split_int(): Limb {res} is out of range.'\n    %}\n    tempvar low_part = [output];\n    assert_nn_le(low_part, bound - 1);\n\n    return split_int(\n        value=(value - low_part) / base, n=n - 1, base=base, bound=bound, output=output + 1\n    );\n}\n\n// Returns the floor value of the square root of the given value.\n// Assumptions: 0 <= value < 2**250.\n@known_ap_change\nfunc sqrt{range_check_ptr}(value) -> felt {\n    alloc_locals;\n    local root: felt;\n\n    %{\n        from starkware.python.math_utils import isqrt\n        value = ids.value % PRIME\n        assert value < 2 ** 250, f\"value={value} is outside of the range [0, 2**250).\"\n        assert 2 ** 250 < PRIME\n        ids.root = isqrt(value)\n    %}\n\n    assert_nn_le(root, 2 ** 125 - 1);\n    tempvar root_plus_one = root + 1;\n    assert_in_range(value, root * root, root_plus_one * root_plus_one);\n\n    return root;\n}\n\n// Computes the evaluation of a polynomial on the given point.\nfunc horner_eval(n_coefficients: felt, coefficients: felt*, point: felt) -> (res: felt) {\n    if (n_coefficients == 0) {\n        return (res=0);\n    }\n\n    let (n_minus_one_res) = horner_eval(\n        n_coefficients=n_coefficients - 1, coefficients=&coefficients[1], point=point\n    );\n    return (res=n_minus_one_res * point + coefficients[0]);\n}\n\n// Returns TRUE if `x` is a quadratic residue modulo the STARK prime. Returns FALSE otherwise.\n// Returns TRUE on 0.\n@known_ap_change\nfunc is_quad_residue(x: felt) -> felt {\n    alloc_locals;\n    local y;\n    %{\n        from starkware.crypto.signature.signature import FIELD_PRIME\n        from starkware.python.math_utils import div_mod, is_quad_residue, sqrt\n\n        x = ids.x\n        if is_quad_residue(x, FIELD_PRIME):\n            ids.y = sqrt(x, FIELD_PRIME)\n        else:\n            ids.y = sqrt(div_mod(x, 3, FIELD_PRIME), FIELD_PRIME)\n    %}\n    // Relies on the fact that 3 is not a quadratic residue modulo the prime, so for every field\n    // element x, either:\n    //   * x is a quadratic residue and there exists y such that y^2 = x.\n    //   * x is not a quadratic residue and there exists y such that 3 * y^2 = x.\n    tempvar y_squared = y * y;\n    if (y_squared == x) {\n        ap += 1;\n        return TRUE;\n    } else {\n        assert 3 * y_squared = x;\n        return FALSE;\n    }\n}\n\n// Asserts that x = 2^n for some 0 <= n <= max_pow.\nfunc assert_is_power_of_2(x: felt, max_pow: felt) {\n    if (max_pow == 0) {\n        assert x = 1;\n    }\n    if (x == 1) {\n        return ();\n    }\n    return assert_is_power_of_2(x=x / 2, max_pow=max_pow - 1);\n}\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/math_cmp.cairo": "from starkware.cairo.common.math import assert_le_felt, assert_lt_felt\n\nconst RC_BOUND = 2 ** 128;\n\n// Returns 1 if value != 0. Returns 0 otherwise.\n@known_ap_change\nfunc is_not_zero(value) -> felt {\n    if (value == 0) {\n        return 0;\n    }\n\n    return 1;\n}\n\n// Returns 1 if a >= 0 (or more precisely 0 <= a < RANGE_CHECK_BOUND).\n// Returns 0 otherwise.\n@known_ap_change\nfunc is_nn{range_check_ptr}(a) -> felt {\n    %{ memory[ap] = 0 if 0 <= (ids.a % PRIME) < range_check_builtin.bound else 1 %}\n    jmp out_of_range if [ap] != 0, ap++;\n    [range_check_ptr] = a;\n    ap += 20;\n    let range_check_ptr = range_check_ptr + 1;\n    return 1;\n\n    out_of_range:\n    %{ memory[ap] = 0 if 0 <= ((-ids.a - 1) % PRIME) < range_check_builtin.bound else 1 %}\n    jmp need_felt_comparison if [ap] != 0, ap++;\n    assert [range_check_ptr] = (-a) - 1;\n    ap += 17;\n    let range_check_ptr = range_check_ptr + 1;\n    return 0;\n\n    need_felt_comparison:\n    assert_le_felt(RC_BOUND, a);\n    return 0;\n}\n\n// Returns 1 if a <= b (or more precisely 0 <= b - a < RANGE_CHECK_BOUND).\n// Returns 0 otherwise.\n@known_ap_change\nfunc is_le{range_check_ptr}(a, b) -> felt {\n    return is_nn(b - a);\n}\n\n// Returns 1 if 0 <= a <= b < RANGE_CHECK_BOUND.\n// Returns 0 otherwise.\n//\n// Assumption: b < RANGE_CHECK_BOUND.\n@known_ap_change\nfunc is_nn_le{range_check_ptr}(a, b) -> felt {\n    let res = is_nn(a);\n    if (res == 0) {\n        ap += 25;\n        return res;\n    }\n    return is_nn(b - a);\n}\n\n// Returns 1 if value is in the range [lower, upper).\n// Returns 0 otherwise.\n// Assumptions:\n//   upper - lower <= RANGE_CHECK_BOUND.\n@known_ap_change\nfunc is_in_range{range_check_ptr}(value, lower, upper) -> felt {\n    let res = is_le(lower, value);\n    if (res == 0) {\n        ap += 26;\n        return res;\n    }\n    return is_nn(upper - 1 - value);\n}\n\n// Checks if the unsigned integer lift (as a number in the range [0, PRIME)) of a is lower than\n// or equal to that of b.\n// See split_felt() for more details.\n// Returns 1 if true, 0 otherwise.\n@known_ap_change\nfunc is_le_felt{range_check_ptr}(a, b) -> felt {\n    %{ memory[ap] = 0 if (ids.a % PRIME) <= (ids.b % PRIME) else 1 %}\n    jmp not_le if [ap] != 0, ap++;\n    ap += 6;\n    assert_le_felt(a, b);\n    return 1;\n\n    not_le:\n    assert_lt_felt(b, a);\n    return 0;\n}\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/poseidon_state.cairo": "// Represents a Poseidon state.\nstruct PoseidonBuiltinState {\n    s0: felt,\n    s1: felt,\n    s2: felt,\n}\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/pow.cairo": "from starkware.cairo.common.math import assert_le, sign\nfrom starkware.cairo.common.registers import get_ap, get_fp_and_pc\n\n// Returns base ** exp, for 0 <= exp < 2**251.\nfunc pow{range_check_ptr}(base, exp) -> (res: felt) {\n    struct LoopLocals {\n        bit: felt,\n        temp0: felt,\n\n        res: felt,\n        base: felt,\n        exp: felt,\n    }\n\n    if (exp == 0) {\n        return (res=1);\n    }\n\n    let initial_locs: LoopLocals* = cast(fp - 2, LoopLocals*);\n    initial_locs.res = 1, ap++;\n    initial_locs.base = base, ap++;\n    initial_locs.exp = exp, ap++;\n\n    loop:\n    let prev_locs: LoopLocals* = cast(ap - LoopLocals.SIZE, LoopLocals*);\n    let locs: LoopLocals* = cast(ap, LoopLocals*);\n    locs.base = prev_locs.base * prev_locs.base, ap++;\n    %{ ids.locs.bit = (ids.prev_locs.exp % PRIME) & 1 %}\n    jmp odd if locs.bit != 0, ap++;\n\n    even:\n    locs.exp = prev_locs.exp / 2, ap++;\n    locs.res = prev_locs.res, ap++;\n    // exp cannot be 0 here.\n    static_assert ap + 1 == locs + LoopLocals.SIZE;\n    jmp loop, ap++;\n\n    odd:\n    locs.temp0 = prev_locs.exp - 1;\n    locs.exp = locs.temp0 / 2, ap++;\n    locs.res = prev_locs.res * prev_locs.base, ap++;\n    static_assert ap + 1 == locs + LoopLocals.SIZE;\n    jmp loop if locs.exp != 0, ap++;\n\n    // Cap the number of steps.\n    let (__ap__) = get_ap();\n    let (__fp__, _) = get_fp_and_pc();\n    let n_steps = (__ap__ - cast(initial_locs, felt*)) / LoopLocals.SIZE - 1;\n    assert_le(n_steps, 251);\n    return (res=locs.res);\n}\n\n// Returns base ** exp, for -rc_bound < exp < rc_bound.\n// exp < PRIME / 2 is considered positive and exp > PRIME / 2 is considered negative.\nfunc signed_pow{range_check_ptr}(base, exp) -> felt {\n    let exp_sign = sign(exp);\n    if (exp_sign == -1) {\n        %{ assert ids.base != 0, \"Cannot raise 0 to a negative power.\" %}\n        let pos_exp = exp * (-1);\n        let (pow_res) = pow(base, pos_exp);\n        return 1 / pow_res;\n    }\n    let (res) = pow(base, exp);\n    return res;\n}\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/registers.cairo": "from starkware.cairo.lang.compiler.lib.registers import get_ap, get_fp_and_pc\n\n// Takes the value of a label (relative to program base) and returns the actual runtime address of\n// that label in the memory.\n//\n// Usage example:\n//\n// func do_callback(...) {\n//     ...\n// }\n//\n// func do_thing_then_callback(callback) {\n//     ...\n//     call abs callback;\n// }\n//\n// func main() {\n//     let (callback_address) = get_label_location(do_callback);\n//     do_thing_then_callback(callback=callback_address);\n// }\nfunc get_label_location(label_value: codeoffset) -> (res: felt*) {\n    let (_, pc_val) = get_fp_and_pc();\n\n    ret_pc_label:\n    return (res=pc_val + (label_value - ret_pc_label));\n}\n",
+            "/home/starkware/.cache/bazel/_bazel_starkware/8c069df52082beee3c95ca17836fb8e2/sandbox/processwrapper-sandbox/14/execroot/__main__/src/starkware/cairo/common/uint256.cairo": "from starkware.cairo.common.bitwise import bitwise_and, bitwise_or, bitwise_xor\nfrom starkware.cairo.common.cairo_builtins import BitwiseBuiltin\nfrom starkware.cairo.common.math import (\n    assert_in_range,\n    assert_le,\n    assert_nn_le,\n    assert_not_zero,\n    split_felt,\n)\nfrom starkware.cairo.common.math_cmp import is_le\nfrom starkware.cairo.common.pow import pow\nfrom starkware.cairo.common.registers import get_ap, get_fp_and_pc\n\n// Represents an integer in the range [0, 2^256).\nstruct Uint256 {\n    // The low 128 bits of the value.\n    low: felt,\n    // The high 128 bits of the value.\n    high: felt,\n}\n\nconst SHIFT = 2 ** 128;\nconst ALL_ONES = 2 ** 128 - 1;\nconst HALF_SHIFT = 2 ** 64;\n\n// Verifies that the given integer is valid.\nfunc uint256_check{range_check_ptr}(a: Uint256) {\n    [range_check_ptr] = a.low;\n    [range_check_ptr + 1] = a.high;\n    let range_check_ptr = range_check_ptr + 2;\n    return ();\n}\n\n// Converters.\n\n// Converts a Uint256 value in the range [0, PRIME) to a felt. Fails if value is out of range.\nfunc uint256_to_felt{range_check_ptr}(value: Uint256) -> felt {\n    // The maximal accepted value is PRIME - 1 = -1 = 2**251 + 17 * 2**192 =\n    // SHIFT * (2**123 + 17*2**64).\n    // Denote HIGH_PART = -1 / SHIFT.\n    // If value.low = 0 then value is valid only if value.high <= HIGH_PART.\n    // Otherwise, value is valid if value.high <= HIGH_PART - 1.\n\n    const HIGH_PART = (-1) / SHIFT;\n    // Derive the upper bound based on value.low.\n    if (value.low == 0) {\n        tempvar high_part_max_value = HIGH_PART;\n    } else {\n        tempvar high_part_max_value = HIGH_PART - 1;\n    }\n\n    with_attr error_message(\"OUT_OF_RANGE_UINT256_VALUE\") {\n        // Assert value.high <= high_part_max_value.\n        assert [range_check_ptr] = high_part_max_value - value.high;\n        let range_check_ptr = range_check_ptr + 1;\n    }\n    // Express the value as felt.\n    return value.high * SHIFT + value.low;\n}\n\n// Converts a felt to a uint256.\nfunc felt_to_uint256{range_check_ptr}(value: felt) -> Uint256 {\n    let (high, low) = split_felt(value=value);\n    return (Uint256(low=low, high=high));\n}\n\n// Arithmetics.\n\n// Adds two integers. Returns the result as a 256-bit integer and the (1-bit) carry.\nfunc uint256_add{range_check_ptr}(a: Uint256, b: Uint256) -> (res: Uint256, carry: felt) {\n    alloc_locals;\n    local res: Uint256;\n    local carry_low: felt;\n    local carry_high: felt;\n    %{\n        sum_low = ids.a.low + ids.b.low\n        ids.carry_low = 1 if sum_low >= ids.SHIFT else 0\n        sum_high = ids.a.high + ids.b.high + ids.carry_low\n        ids.carry_high = 1 if sum_high >= ids.SHIFT else 0\n    %}\n\n    assert carry_low * carry_low = carry_low;\n    assert carry_high * carry_high = carry_high;\n\n    assert res.low = a.low + b.low - carry_low * SHIFT;\n    assert res.high = a.high + b.high + carry_low - carry_high * SHIFT;\n    uint256_check(res);\n\n    return (res, carry_high);\n}\n\n// Splits a field element in the range [0, 2^192) to its low 64-bit and high 128-bit parts.\n// Soundness guarantee: a is in the range [0, 2^192).\nfunc split_64{range_check_ptr}(a: felt) -> (low: felt, high: felt) {\n    alloc_locals;\n    local low: felt;\n    local high: felt;\n\n    %{\n        ids.low = ids.a & ((1<<64) - 1)\n        ids.high = ids.a >> 64\n    %}\n    assert a = low + high * HALF_SHIFT;\n    assert [range_check_ptr + 0] = low;\n    assert [range_check_ptr + 1] = HALF_SHIFT - 1 - low;\n    assert [range_check_ptr + 2] = high;\n    let range_check_ptr = range_check_ptr + 3;\n    return (low, high);\n}\n\n// Multiplies two integers. Returns the result as two 256-bit integers (low and high parts).\nfunc uint256_mul{range_check_ptr}(a: Uint256, b: Uint256) -> (low: Uint256, high: Uint256) {\n    alloc_locals;\n    let (a0, a1) = split_64(a.low);\n    let (a2, a3) = split_64(a.high);\n    let (b0, b1) = split_64(b.low);\n    let (b2, b3) = split_64(b.high);\n\n    let (res0, carry) = split_64(a0 * b0);\n    let (res1, carry) = split_64(a1 * b0 + a0 * b1 + carry);\n    let (res2, carry) = split_64(a2 * b0 + a1 * b1 + a0 * b2 + carry);\n    let (res3, carry) = split_64(a3 * b0 + a2 * b1 + a1 * b2 + a0 * b3 + carry);\n    let (res4, carry) = split_64(a3 * b1 + a2 * b2 + a1 * b3 + carry);\n    let (res5, carry) = split_64(a3 * b2 + a2 * b3 + carry);\n    let (res6, carry) = split_64(a3 * b3 + carry);\n\n    return (\n        low=Uint256(low=res0 + HALF_SHIFT * res1, high=res2 + HALF_SHIFT * res3),\n        high=Uint256(low=res4 + HALF_SHIFT * res5, high=res6 + HALF_SHIFT * carry),\n    );\n}\n\n// Returns the floor value of the square root of a uint256 integer.\nfunc uint256_sqrt{range_check_ptr}(n: Uint256) -> (res: Uint256) {\n    alloc_locals;\n    local root: Uint256;\n\n    %{\n        from starkware.python.math_utils import isqrt\n        n = (ids.n.high << 128) + ids.n.low\n        root = isqrt(n)\n        assert 0 <= root < 2 ** 128\n        ids.root.low = root\n        ids.root.high = 0\n    %}\n\n    // Verify that 0 <= root < 2**128.\n    assert root.high = 0;\n    [range_check_ptr] = root.low;\n    let range_check_ptr = range_check_ptr + 1;\n\n    // Verify that n >= root**2.\n    let (root_squared, carry) = uint256_mul(root, root);\n    assert carry = Uint256(0, 0);\n    let (check_lower_bound) = uint256_le(root_squared, n);\n    assert check_lower_bound = 1;\n\n    // Verify that n <= (root+1)**2 - 1.\n    // In the case where root = 2**128 - 1, we will have next_root_squared=0.\n    // Since (root+1)**2 = 2**256. Therefore next_root_squared - 1 = 2**256 - 1, as desired.\n    let (next_root, add_carry) = uint256_add(root, Uint256(1, 0));\n    assert add_carry = 0;\n    let (next_root_squared, _) = uint256_mul(next_root, next_root);\n    let (next_root_squared_minus_one) = uint256_sub(next_root_squared, Uint256(1, 0));\n    let (check_upper_bound) = uint256_le(n, next_root_squared_minus_one);\n    assert check_upper_bound = 1;\n\n    return (res=root);\n}\n\n// Returns 1 if the first unsigned integer is less than the second unsigned integer.\nfunc uint256_lt{range_check_ptr}(a: Uint256, b: Uint256) -> (res: felt) {\n    if (a.high == b.high) {\n        return (is_le(a.low + 1, b.low),);\n    }\n    return (is_le(a.high + 1, b.high),);\n}\n\n// Returns 1 if the first signed integer is less than the second signed integer.\nfunc uint256_signed_lt{range_check_ptr}(a: Uint256, b: Uint256) -> (res: felt) {\n    let (a, _) = uint256_add(a, cast((low=0, high=2 ** 127), Uint256));\n    let (b, _) = uint256_add(b, cast((low=0, high=2 ** 127), Uint256));\n    return uint256_lt(a, b);\n}\n\n// Returns 1 if the first unsigned integer is less than or equal to the second unsigned integer.\nfunc uint256_le{range_check_ptr}(a: Uint256, b: Uint256) -> (res: felt) {\n    let (not_le) = uint256_lt(a=b, b=a);\n    return (res=1 - not_le);\n}\n\n// Returns 1 if the first signed integer is less than or equal to the second signed integer.\nfunc uint256_signed_le{range_check_ptr}(a: Uint256, b: Uint256) -> (res: felt) {\n    let (not_le) = uint256_signed_lt(a=b, b=a);\n    return (res=1 - not_le);\n}\n\n// Returns 1 if the signed integer is nonnegative.\n@known_ap_change\nfunc uint256_signed_nn{range_check_ptr}(a: Uint256) -> (res: felt) {\n    %{ memory[ap] = 1 if 0 <= (ids.a.high % PRIME) < 2 ** 127 else 0 %}\n    jmp non_negative if [ap] != 0, ap++;\n\n    assert [range_check_ptr] = a.high - 2 ** 127;\n    let range_check_ptr = range_check_ptr + 1;\n    return (res=0);\n\n    non_negative:\n    assert [range_check_ptr] = a.high + 2 ** 127;\n    let range_check_ptr = range_check_ptr + 1;\n    return (res=1);\n}\n\n// Returns 1 if the first signed integer is less than or equal to the second signed integer\n// and is greater than or equal to zero.\nfunc uint256_signed_nn_le{range_check_ptr}(a: Uint256, b: Uint256) -> (res: felt) {\n    let (is_le) = uint256_signed_le(a=a, b=b);\n    if (is_le == 0) {\n        return (res=0);\n    }\n    let (is_nn) = uint256_signed_nn(a=a);\n    return (res=is_nn);\n}\n\n// Unsigned integer division between two integers. Returns the quotient and the remainder.\n// Conforms to EVM specifications: division by 0 yields 0.\nfunc uint256_unsigned_div_rem{range_check_ptr}(a: Uint256, div: Uint256) -> (\n    quotient: Uint256, remainder: Uint256\n) {\n    alloc_locals;\n\n    // If div == 0, return (0, 0).\n    if (div.low + div.high == 0) {\n        return (quotient=Uint256(0, 0), remainder=Uint256(0, 0));\n    }\n\n    // Guess the quotient and the remainder.\n    local quotient: Uint256;\n    local remainder: Uint256;\n    %{\n        a = (ids.a.high << 128) + ids.a.low\n        div = (ids.div.high << 128) + ids.div.low\n        quotient, remainder = divmod(a, div)\n\n        ids.quotient.low = quotient & ((1 << 128) - 1)\n        ids.quotient.high = quotient >> 128\n        ids.remainder.low = remainder & ((1 << 128) - 1)\n        ids.remainder.high = remainder >> 128\n    %}\n    uint256_check(quotient);\n    uint256_check(remainder);\n    let (res_mul, carry) = uint256_mul(quotient, div);\n    assert carry = Uint256(0, 0);\n\n    let (check_val, add_carry) = uint256_add(res_mul, remainder);\n    assert check_val = a;\n    assert add_carry = 0;\n\n    let (is_valid) = uint256_lt(remainder, div);\n    assert is_valid = 1;\n    return (quotient=quotient, remainder=remainder);\n}\n\n// Computes:\n// 1. The integer division `(a * b) // div` (as a 512-bit number).\n// 2. The remainder `(a * b) modulo div`.\n// Assumption: div != 0.\nfunc uint256_mul_div_mod{range_check_ptr}(a: Uint256, b: Uint256, div: Uint256) -> (\n    quotient_low: Uint256, quotient_high: Uint256, remainder: Uint256\n) {\n    alloc_locals;\n\n    // Compute a * b (512 bits).\n    let (ab_low, ab_high) = uint256_mul(a, b);\n\n    // Guess the quotient and remainder of (a * b) / d.\n    local quotient_low: Uint256;\n    local quotient_high: Uint256;\n    local remainder: Uint256;\n\n    %{\n        a = (ids.a.high << 128) + ids.a.low\n        b = (ids.b.high << 128) + ids.b.low\n        div = (ids.div.high << 128) + ids.div.low\n        quotient, remainder = divmod(a * b, div)\n\n        ids.quotient_low.low = quotient & ((1 << 128) - 1)\n        ids.quotient_low.high = (quotient >> 128) & ((1 << 128) - 1)\n        ids.quotient_high.low = (quotient >> 256) & ((1 << 128) - 1)\n        ids.quotient_high.high = quotient >> 384\n        ids.remainder.low = remainder & ((1 << 128) - 1)\n        ids.remainder.high = remainder >> 128\n    %}\n\n    // Compute x = quotient * div + remainder.\n    uint256_check(quotient_high);\n    let (quotient_mod10, quotient_mod11) = uint256_mul(quotient_high, div);\n    uint256_check(quotient_low);\n    let (quotient_mod00, quotient_mod01) = uint256_mul(quotient_low, div);\n    // Since x should equal a * b, the high 256 bits must be zero.\n    assert quotient_mod11 = Uint256(0, 0);\n\n    // The low 256 bits of x must be ab_low.\n    uint256_check(remainder);\n    let (x0, carry0) = uint256_add(quotient_mod00, remainder);\n    assert x0 = ab_low;\n\n    let (x1, carry1) = uint256_add(quotient_mod01, quotient_mod10);\n    assert carry1 = 0;\n    let (x1, carry2) = uint256_add(x1, Uint256(low=carry0, high=0));\n    assert carry2 = 0;\n\n    assert x1 = ab_high;\n\n    // Verify that 0 <= remainder < div.\n    let (is_valid) = uint256_lt(remainder, div);\n    assert is_valid = 1;\n\n    return (quotient_low=quotient_low, quotient_high=quotient_high, remainder=remainder);\n}\n\n// Returns the bitwise NOT of an integer.\nfunc uint256_not{range_check_ptr}(a: Uint256) -> (res: Uint256) {\n    return (res=Uint256(low=ALL_ONES - a.low, high=ALL_ONES - a.high));\n}\n\n// Returns the negation of an integer.\n// Note that the negation of -2**255 is -2**255.\nfunc uint256_neg{range_check_ptr}(a: Uint256) -> (res: Uint256) {\n    let (not_num) = uint256_not(a);\n    let (res, _) = uint256_add(not_num, Uint256(low=1, high=0));\n    return (res=res);\n}\n\n// Conditionally negates an integer.\nfunc uint256_cond_neg{range_check_ptr}(a: Uint256, should_neg) -> (res: Uint256) {\n    if (should_neg != 0) {\n        return uint256_neg(a);\n    } else {\n        return (res=a);\n    }\n}\n\n// Signed integer division between two integers. Returns the quotient and the remainder.\n// Conforms to EVM specifications.\n// See ethereum yellow paper (https://ethereum.github.io/yellowpaper/paper.pdf, page 29).\n// Note that the remainder may be negative if one of the inputs is negative and that\n// (-2**255) / (-1) = -2**255 because 2*255 is out of range.\nfunc uint256_signed_div_rem{range_check_ptr}(a: Uint256, div: Uint256) -> (\n    quot: Uint256, rem: Uint256\n) {\n    alloc_locals;\n\n    // When div=-1, simply return -a.\n    if (div.low == SHIFT - 1 and div.high == SHIFT - 1) {\n        let (quot) = uint256_neg(a);\n        return (quot, cast((0, 0), Uint256));\n    }\n\n    // Take the absolute value of a.\n    local a_sign = is_le(2 ** 127, a.high);\n    local range_check_ptr = range_check_ptr;\n    let (local a) = uint256_cond_neg(a, should_neg=a_sign);\n\n    // Take the absolute value of div.\n    local div_sign = is_le(2 ** 127, div.high);\n    local range_check_ptr = range_check_ptr;\n    let (div) = uint256_cond_neg(div, should_neg=div_sign);\n\n    // Unsigned division.\n    let (local quot, local rem) = uint256_unsigned_div_rem(a, div);\n    local range_check_ptr = range_check_ptr;\n\n    // Fix the remainder according to the sign of a.\n    let (rem) = uint256_cond_neg(rem, should_neg=a_sign);\n\n    // Fix the quotient according to the signs of a and div.\n    if (a_sign == div_sign) {\n        return (quot=quot, rem=rem);\n    }\n    let (local quot_neg) = uint256_neg(quot);\n\n    return (quot=quot_neg, rem=rem);\n}\n\n// Subtracts two integers. Returns the result as a 256-bit integer.\nfunc uint256_sub{range_check_ptr}(a: Uint256, b: Uint256) -> (res: Uint256) {\n    let (b_neg) = uint256_neg(b);\n    let (res, _) = uint256_add(a, b_neg);\n    return (res=res);\n}\n\n// Bitwise.\n\n// Return true if both integers are equal.\nfunc uint256_eq{range_check_ptr}(a: Uint256, b: Uint256) -> (res: felt) {\n    if (a.high != b.high) {\n        return (res=0);\n    }\n    if (a.low != b.low) {\n        return (res=0);\n    }\n    return (res=1);\n}\n\n// Computes the bitwise XOR of 2 uint256 integers.\nfunc uint256_xor{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(a: Uint256, b: Uint256) -> (\n    res: Uint256\n) {\n    let (low) = bitwise_xor(a.low, b.low);\n    let (high) = bitwise_xor(a.high, b.high);\n    return (res=Uint256(low, high));\n}\n\n// Computes the bitwise AND of 2 uint256 integers.\nfunc uint256_and{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(a: Uint256, b: Uint256) -> (\n    res: Uint256\n) {\n    let (low) = bitwise_and(a.low, b.low);\n    let (high) = bitwise_and(a.high, b.high);\n    return (res=Uint256(low, high));\n}\n\n// Computes the bitwise OR of 2 uint256 integers.\nfunc uint256_or{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(a: Uint256, b: Uint256) -> (\n    res: Uint256\n) {\n    let (low) = bitwise_or(a.low, b.low);\n    let (high) = bitwise_or(a.high, b.high);\n    return (res=Uint256(low, high));\n}\n\n// Computes 2**exp % 2**256 as a uint256 integer.\nfunc uint256_pow2{range_check_ptr}(exp: Uint256) -> (res: Uint256) {\n    // If exp >= 256, the result will be zero modulo 2**256.\n    let (res) = uint256_lt(exp, Uint256(256, 0));\n    if (res == 0) {\n        return (res=Uint256(0, 0));\n    }\n\n    if (is_le(exp.low, 127) != 0) {\n        let (x) = pow(2, exp.low);\n        return (res=Uint256(x, 0));\n    } else {\n        let (x) = pow(2, exp.low - 128);\n        return (res=Uint256(0, x));\n    }\n}\n\n// Computes the logical left shift of a uint256 integer.\nfunc uint256_shl{range_check_ptr}(a: Uint256, b: Uint256) -> (res: Uint256) {\n    let (c) = uint256_pow2(b);\n    let (res, _) = uint256_mul(a, c);\n    return (res=res);\n}\n\n// Computes the logical right shift of a uint256 integer.\nfunc uint256_shr{range_check_ptr}(a: Uint256, b: Uint256) -> (res: Uint256) {\n    let (c) = uint256_pow2(b);\n    let (res, _) = uint256_unsigned_div_rem(a, c);\n    return (res=res);\n}\n\n// Reverses byte endianness of a 128-bit word.\n//\n// The algorithm works in steps. Generally\u00a0speaking, on the i-th step,\n// we switch between every two consecutive sequences of 2 ** i bytes.\n// To illustrate how it works, here are the steps when running\n// on a 64-bit word = [b0, b1, b2, b3, b4, b5, b6, b7] (3 steps instead of 4):\n//\n// step 1:\n// [b0, b1, b2, b3, b4, b5, b6, b7] -\n// [b0,\u00a00,\u00a0 b2, 0,\u00a0 b4, 0,\u00a0 b6, 0 ] +\n// [0,\u00a0 0,\u00a0 b0, 0,\u00a0 b2, 0,\u00a0 b4, 0,  b6] =\n// [0,\u00a0 b1, b0, b3, b2, b5, b4, b7, b6]\n//\n// step 2:\n// [0, b1, b0, b3, b2, b5, b4, b7, b6] -\n// [0, b1, b0, 0,\u00a0 0,\u00a0 b5, b4, 0,\u00a0 0 ]\u00a0+\n// [0, 0,\u00a0 0,\u00a0\u00a00,\u00a0 0,\u00a0\u00a0b1, b0, 0,\u00a0\u00a00,\u00a0 b5, b4] =\n// [0, 0,\u00a0 0,\u00a0\u00a0b3, b2, b1, b0,\u00a0b7, b6, b5, b4]\n//\n// step 3:\n// [0, 0, 0, b3, b2, b1, b0,\u00a0b7, b6, b5, b4] -\n// [0, 0, 0, b3, b2, b1, b0, 0,\u00a0 0,\u00a0\u00a00,\u00a0\u00a00 ] +\n// [0, 0, 0, 0,\u00a0 0,\u00a0\u00a00,\u00a0\u00a00,\u00a0\u00a00,\u00a0\u00a00,\u00a0\u00a00,\u00a0\u00a00,  b3, b2, b1, b0] =\n// [0, 0, 0, 0,\u00a0 0,\u00a0\u00a00,\u00a0\u00a00,\u00a0\u00a0b7, b6, b5, b4, b3, b2, b1, b0]\n//\n// Next, we divide by 2 ** (8\u00a0+ 16\u00a0+ 32) and get [b7, b6, b5, b4, b3, b2, b1, b0].\nfunc word_reverse_endian{bitwise_ptr: BitwiseBuiltin*}(word: felt) -> (res: felt) {\n    // Step 1.\n    assert bitwise_ptr[0].x = word;\n    assert bitwise_ptr[0].y = 0x00ff00ff00ff00ff00ff00ff00ff00ff;\n    tempvar word = word + (2 ** 16 - 1) * bitwise_ptr[0].x_and_y;\n    // Step 2.\n    assert bitwise_ptr[1].x = word;\n    assert bitwise_ptr[1].y = 0x00ffff0000ffff0000ffff0000ffff00;\n    tempvar word = word + (2 ** 32 - 1) * bitwise_ptr[1].x_and_y;\n    // Step 3.\n    assert bitwise_ptr[2].x = word;\n    assert bitwise_ptr[2].y = 0x00ffffffff00000000ffffffff000000;\n    tempvar word = word + (2 ** 64 - 1) * bitwise_ptr[2].x_and_y;\n    // Step 4.\n    assert bitwise_ptr[3].x = word;\n    assert bitwise_ptr[3].y = 0x00ffffffffffffffff00000000000000;\n    tempvar word = word + (2 ** 128 - 1) * bitwise_ptr[3].x_and_y;\n\n    let bitwise_ptr = bitwise_ptr + 4 * BitwiseBuiltin.SIZE;\n    return (res=word / 2 ** (8 + 16 + 32 + 64));\n}\n\n// Reverses byte endianness of a uint256 integer.\nfunc uint256_reverse_endian{bitwise_ptr: BitwiseBuiltin*}(num: Uint256) -> (res: Uint256) {\n    let (high) = word_reverse_endian(num.high);\n    let (low) = word_reverse_endian(num.low);\n\n    return (res=Uint256(low=high, high=low));\n}\n\n// Assertions:\n\nfunc assert_uint256_eq{range_check_ptr}(a: Uint256, b: Uint256) {\n    let (res) = uint256_eq(a, b);\n    with_attr error_message(\"assert_uint256_eq failed\") {\n        assert res = 1;\n    }\n    return ();\n}\n\nfunc assert_uint256_lt{range_check_ptr}(a: Uint256, b: Uint256) {\n    let (res) = uint256_lt(a, b);\n    with_attr error_message(\"assert_uint256_lt failed\") {\n        assert res = 1;\n    }\n    return ();\n}\n\nfunc assert_uint256_le{range_check_ptr}(a: Uint256, b: Uint256) {\n    let (res) = uint256_le(a, b);\n    with_attr error_message(\"assert_uint256_le failed\") {\n        assert res = 1;\n    }\n    return ();\n}\n",
+            "src/starkware/starknet/common/new_syscalls.cairo": "from starkware.cairo.common.cairo_secp.ec import EcPoint\nfrom starkware.cairo.common.uint256 import Uint256\n\n// Syscall selectors.\n\nconst CALL_CONTRACT_SELECTOR = 'CallContract';\nconst DEPLOY_SELECTOR = 'Deploy';\nconst EMIT_EVENT_SELECTOR = 'EmitEvent';\nconst GET_BLOCK_HASH_SELECTOR = 'GetBlockHash';\nconst GET_EXECUTION_INFO_SELECTOR = 'GetExecutionInfo';\nconst SECP256K1_ADD_SELECTOR = 'Secp256k1Add';\nconst SECP256K1_GET_POINT_FROM_X_SELECTOR = 'Secp256k1GetPointFromX';\nconst SECP256K1_GET_XY_SELECTOR = 'Secp256k1GetXy';\nconst SECP256K1_MUL_SELECTOR = 'Secp256k1Mul';\nconst SECP256K1_NEW_SELECTOR = 'Secp256k1New';\nconst SECP256R1_ADD_SELECTOR = 'Secp256r1Add';\nconst SECP256R1_GET_POINT_FROM_X_SELECTOR = 'Secp256r1GetPointFromX';\nconst SECP256R1_GET_XY_SELECTOR = 'Secp256r1GetXy';\nconst SECP256R1_MUL_SELECTOR = 'Secp256r1Mul';\nconst SECP256R1_NEW_SELECTOR = 'Secp256r1New';\nconst KECCAK_SELECTOR = 'Keccak';\nconst LIBRARY_CALL_SELECTOR = 'LibraryCall';\nconst REPLACE_CLASS_SELECTOR = 'ReplaceClass';\nconst SEND_MESSAGE_TO_L1_SELECTOR = 'SendMessageToL1';\nconst STORAGE_READ_SELECTOR = 'StorageRead';\nconst STORAGE_WRITE_SELECTOR = 'StorageWrite';\n\n// Syscall structs.\n\nstruct ExecutionInfo {\n    block_info: BlockInfo*,\n    tx_info: TxInfo*,\n\n    // Entry-point-specific info.\n\n    caller_address: felt,\n    // The execution is done in the context of the contract at this address.\n    // It controls the storage being used, messages sent to L1, calling contracts, etc.\n    contract_address: felt,\n    // The entry point selector.\n    selector: felt,\n}\n\nstruct BlockInfo {\n    block_number: felt,\n    block_timestamp: felt,\n    // The address of the sequencer that is creating this block.\n    sequencer_address: felt,\n}\n\nstruct ResourceBounds {\n    // The name of the resource (e.g., 'L1_GAS').\n    resource: felt,\n    // The maximum amount of the resource allowed for usage during the execution.\n    max_amount: felt,\n    // The maximum price the user is willing to pay for the resource unit.\n    max_price_per_unit: felt,\n}\n\nstruct TxInfo {\n    // The version of the transaction. It is fixed in the OS, and should be signed by the account\n    // contract.\n    // This field allows invalidating old transactions, whenever the meaning of the other\n    // transaction fields is changed (in the OS).\n    version: felt,\n    // The account contract from which this transaction originates.\n    account_contract_address: felt,\n    // The max_fee field of the transaction.\n    max_fee: felt,\n    // The signature of the transaction.\n    signature_start: felt*,\n    signature_end: felt*,\n    // The hash of the transaction.\n    transaction_hash: felt,\n    // The identifier of the chain.\n    // This field can be used to prevent replay of testnet transactions on mainnet.\n    chain_id: felt,\n    // The transaction's nonce.\n    nonce: felt,\n    // An array of ResourceBounds structs.\n    resource_bounds_start: ResourceBounds*,\n    resource_bounds_end: ResourceBounds*,\n    // The tip.\n    tip: felt,\n    // If specified, the paymaster should pay for the execution of the tx.\n    // The data includes the address of the paymaster sponsoring the transaction, followed by extra\n    // data to send to the paymaster.\n    paymaster_data_start: felt*,\n    paymaster_data_end: felt*,\n    // The data availability mode for the nonce.\n    nonce_data_availability_mode: felt,\n    // The data availability mode for the account balance from which fee will be taken.\n    fee_data_availability_mode: felt,\n    // If nonempty, will contain the required data for deploying and initializing an account\n    // contract: its class hash, address salt and constructor calldata.\n    account_deployment_data_start: felt*,\n    account_deployment_data_end: felt*,\n}\n\n// Shared attributes.\n\nstruct RequestHeader {\n    // The syscall selector.\n    selector: felt,\n    // The amount of gas left before the syscall execution.\n    gas: felt,\n}\n\nstruct ResponseHeader {\n    // The amount of gas left after the syscall execution.\n    gas: felt,\n    // 0 if the syscall succeeded; 1 otherwise.\n    failure_flag: felt,\n}\n\nstruct FailureReason {\n    start: felt*,\n    end: felt*,\n}\n\n// Syscall requests.\n\nstruct CallContractRequest {\n    // The address of the L2 contract to call.\n    contract_address: felt,\n    // The selector of the function to call.\n    selector: felt,\n    // The calldata.\n    calldata_start: felt*,\n    calldata_end: felt*,\n}\n\nstruct LibraryCallRequest {\n    // The hash of the class to run.\n    class_hash: felt,\n    // The selector of the function to call.\n    selector: felt,\n    // The calldata.\n    calldata_start: felt*,\n    calldata_end: felt*,\n}\n\nstruct EmptyRequest {\n}\n\nstruct DeployRequest {\n    // The hash of the class to deploy.\n    class_hash: felt,\n    // A salt for the new contract address calculation.\n    contract_address_salt: felt,\n    // The calldata for the constructor.\n    constructor_calldata_start: felt*,\n    constructor_calldata_end: felt*,\n    // Used for deterministic contract address deployment.\n    deploy_from_zero: felt,\n}\n\nstruct GetBlockHashRequest {\n    // The number of the block to get the hash for.\n    block_number: felt,\n}\n\nstruct KeccakRequest {\n    // The Span<u64> to be hashed.\n    // See `keccak_padded_input` for more details.\n    input_start: felt*,\n    input_end: felt*,\n}\n\nstruct SecpAddRequest {\n    p0: EcPoint*,\n    p1: EcPoint*,\n}\n\nusing Secp256k1AddRequest = SecpAddRequest;\nusing Secp256r1AddRequest = SecpAddRequest;\n\nstruct SecpMulRequest {\n    p: EcPoint*,\n    scalar: Uint256,\n}\n\nusing Secp256k1MulRequest = SecpMulRequest;\nusing Secp256r1MulRequest = SecpMulRequest;\n\nstruct SecpNewRequest {\n    // The x and y coordinates of the requested point on the Secp curve.\n    // The point at infinity, can be created by passing (0, 0).\n    x: Uint256,\n    y: Uint256,\n}\n\nusing Secp256k1NewRequest = SecpNewRequest;\nusing Secp256r1NewRequest = SecpNewRequest;\n\nstruct SecpGetPointFromXRequest {\n    x: Uint256,\n    y_parity: felt,\n}\n\nusing Secp256k1GetPointFromXRequest = SecpGetPointFromXRequest;\nusing Secp256r1GetPointFromXRequest = SecpGetPointFromXRequest;\n\nstruct SecpGetXyRequest {\n    // A pointer to the point.\n    ec_point: EcPoint*,\n}\n\nusing Secp256k1GetXyRequest = SecpGetXyRequest;\nusing Secp256r1GetXyRequest = SecpGetXyRequest;\n\nstruct StorageReadRequest {\n    reserved: felt,\n    key: felt,\n}\n\nstruct StorageWriteRequest {\n    reserved: felt,\n    key: felt,\n    value: felt,\n}\n\nstruct EmitEventRequest {\n    keys_start: felt*,\n    keys_end: felt*,\n    data_start: felt*,\n    data_end: felt*,\n}\n\nstruct ReplaceClassRequest {\n    class_hash: felt,\n}\n\nstruct SendMessageToL1Request {\n    to_address: felt,\n    payload_start: felt*,\n    payload_end: felt*,\n}\n\n// Syscall responses.\n\nstruct CallContractResponse {\n    retdata_start: felt*,\n    retdata_end: felt*,\n}\n\nstruct DeployResponse {\n    contract_address: felt,\n    constructor_retdata_start: felt*,\n    constructor_retdata_end: felt*,\n}\n\nstruct KeccakResponse {\n    result_low: felt,\n    result_high: felt,\n}\n\nstruct SecpGetXyResponse {\n    // The x and y coordinates of the given point. Returns (0, 0) for the point at infinity.\n    x: Uint256,\n    y: Uint256,\n}\n\nusing Secp256k1GetXyResponse = SecpGetXyResponse;\nusing Secp256r1GetXyResponse = SecpGetXyResponse;\n\nstruct SecpNewResponse {\n    // The syscall returns `Option<SecpPoint>` which is represented as two felts in memory.\n\n    // 1 if the point is not on the curve, 0 otherwise.\n    not_on_curve: felt,\n    // A pointer to the point in the case not_on_curve == 0, otherwise 0.\n    ec_point: EcPoint*,\n}\n\nusing Secp256k1NewResponse = SecpNewResponse;\nusing Secp256r1NewResponse = SecpNewResponse;\n\nstruct SecpOpResponse {\n    // The result of Secp256k1 or Secp256r1 add or mul operations.\n    ec_point: EcPoint*,\n}\n\nusing Secp256k1AddResponse = SecpOpResponse;\nusing Secp256k1MulResponse = SecpOpResponse;\nusing Secp256r1AddResponse = SecpOpResponse;\nusing Secp256r1MulResponse = SecpOpResponse;\n\nstruct StorageReadResponse {\n    value: felt,\n}\n\nstruct GetExecutionInfoResponse {\n    execution_info: ExecutionInfo*,\n}\n\nstruct GetBlockHashResponse {\n    block_hash: felt,\n}\n"
+        },
+        "instruction_locations": {}
+    },
+    "hints": {},
+    "identifiers": {
+        "__main__.BlockInfo": {
+            "full_name": "__main__.BlockInfo",
+            "members": {
+                "block_number": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "block_timestamp": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "sequencer_address": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                }
+            },
+            "size": 3,
+            "type": "struct"
+        },
+        "__main__.CALL_CONTRACT_SELECTOR": {
+            "type": "const",
+            "value": 20853273475220472486191784820
+        },
+        "__main__.CallContractRequest": {
+            "full_name": "__main__.CallContractRequest",
+            "members": {
+                "calldata_end": {
+                    "cairo_type": "felt*",
+                    "offset": 3
+                },
+                "calldata_start": {
+                    "cairo_type": "felt*",
+                    "offset": 2
+                },
+                "contract_address": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "selector": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                }
+            },
+            "size": 4,
+            "type": "struct"
+        },
+        "__main__.CallContractResponse": {
+            "full_name": "__main__.CallContractResponse",
+            "members": {
+                "retdata_end": {
+                    "cairo_type": "felt*",
+                    "offset": 1
+                },
+                "retdata_start": {
+                    "cairo_type": "felt*",
+                    "offset": 0
+                }
+            },
+            "size": 2,
+            "type": "struct"
+        },
+        "__main__.DEPLOY_SELECTOR": {
+            "type": "const",
+            "value": 75202468540281
+        },
+        "__main__.DeployRequest": {
+            "full_name": "__main__.DeployRequest",
+            "members": {
+                "class_hash": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "constructor_calldata_end": {
+                    "cairo_type": "felt*",
+                    "offset": 3
+                },
+                "constructor_calldata_start": {
+                    "cairo_type": "felt*",
+                    "offset": 2
+                },
+                "contract_address_salt": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "deploy_from_zero": {
+                    "cairo_type": "felt",
+                    "offset": 4
+                }
+            },
+            "size": 5,
+            "type": "struct"
+        },
+        "__main__.DeployResponse": {
+            "full_name": "__main__.DeployResponse",
+            "members": {
+                "constructor_retdata_end": {
+                    "cairo_type": "felt*",
+                    "offset": 2
+                },
+                "constructor_retdata_start": {
+                    "cairo_type": "felt*",
+                    "offset": 1
+                },
+                "contract_address": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 3,
+            "type": "struct"
+        },
+        "__main__.EMIT_EVENT_SELECTOR": {
+            "type": "const",
+            "value": 1280709301550335749748
+        },
+        "__main__.EcPoint": {
+            "destination": "starkware.cairo.common.cairo_secp.ec.EcPoint",
+            "type": "alias"
+        },
+        "__main__.EmitEventRequest": {
+            "full_name": "__main__.EmitEventRequest",
+            "members": {
+                "data_end": {
+                    "cairo_type": "felt*",
+                    "offset": 3
+                },
+                "data_start": {
+                    "cairo_type": "felt*",
+                    "offset": 2
+                },
+                "keys_end": {
+                    "cairo_type": "felt*",
+                    "offset": 1
+                },
+                "keys_start": {
+                    "cairo_type": "felt*",
+                    "offset": 0
+                }
+            },
+            "size": 4,
+            "type": "struct"
+        },
+        "__main__.EmptyRequest": {
+            "full_name": "__main__.EmptyRequest",
+            "members": {},
+            "size": 0,
+            "type": "struct"
+        },
+        "__main__.ExecutionInfo": {
+            "full_name": "__main__.ExecutionInfo",
+            "members": {
+                "block_info": {
+                    "cairo_type": "__main__.BlockInfo*",
+                    "offset": 0
+                },
+                "caller_address": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                },
+                "contract_address": {
+                    "cairo_type": "felt",
+                    "offset": 3
+                },
+                "selector": {
+                    "cairo_type": "felt",
+                    "offset": 4
+                },
+                "tx_info": {
+                    "cairo_type": "__main__.TxInfo*",
+                    "offset": 1
+                }
+            },
+            "size": 5,
+            "type": "struct"
+        },
+        "__main__.FailureReason": {
+            "full_name": "__main__.FailureReason",
+            "members": {
+                "end": {
+                    "cairo_type": "felt*",
+                    "offset": 1
+                },
+                "start": {
+                    "cairo_type": "felt*",
+                    "offset": 0
+                }
+            },
+            "size": 2,
+            "type": "struct"
+        },
+        "__main__.GET_BLOCK_HASH_SELECTOR": {
+            "type": "const",
+            "value": 22096086224907272360718070632
+        },
+        "__main__.GET_EXECUTION_INFO_SELECTOR": {
+            "type": "const",
+            "value": 94901967946959054011942058057773508207
+        },
+        "__main__.GetBlockHashRequest": {
+            "full_name": "__main__.GetBlockHashRequest",
+            "members": {
+                "block_number": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 1,
+            "type": "struct"
+        },
+        "__main__.GetBlockHashResponse": {
+            "full_name": "__main__.GetBlockHashResponse",
+            "members": {
+                "block_hash": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 1,
+            "type": "struct"
+        },
+        "__main__.GetExecutionInfoResponse": {
+            "full_name": "__main__.GetExecutionInfoResponse",
+            "members": {
+                "execution_info": {
+                    "cairo_type": "__main__.ExecutionInfo*",
+                    "offset": 0
+                }
+            },
+            "size": 1,
+            "type": "struct"
+        },
+        "__main__.KECCAK_SELECTOR": {
+            "type": "const",
+            "value": 82898831237483
+        },
+        "__main__.KeccakRequest": {
+            "full_name": "__main__.KeccakRequest",
+            "members": {
+                "input_end": {
+                    "cairo_type": "felt*",
+                    "offset": 1
+                },
+                "input_start": {
+                    "cairo_type": "felt*",
+                    "offset": 0
+                }
+            },
+            "size": 2,
+            "type": "struct"
+        },
+        "__main__.KeccakResponse": {
+            "full_name": "__main__.KeccakResponse",
+            "members": {
+                "result_high": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "result_low": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 2,
+            "type": "struct"
+        },
+        "__main__.LIBRARY_CALL_SELECTOR": {
+            "type": "const",
+            "value": 92376026794327011772951660
+        },
+        "__main__.LibraryCallRequest": {
+            "full_name": "__main__.LibraryCallRequest",
+            "members": {
+                "calldata_end": {
+                    "cairo_type": "felt*",
+                    "offset": 3
+                },
+                "calldata_start": {
+                    "cairo_type": "felt*",
+                    "offset": 2
+                },
+                "class_hash": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "selector": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                }
+            },
+            "size": 4,
+            "type": "struct"
+        },
+        "__main__.REPLACE_CLASS_SELECTOR": {
+            "type": "const",
+            "value": 25500403217443378527601783667
+        },
+        "__main__.ReplaceClassRequest": {
+            "full_name": "__main__.ReplaceClassRequest",
+            "members": {
+                "class_hash": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 1,
+            "type": "struct"
+        },
+        "__main__.RequestHeader": {
+            "full_name": "__main__.RequestHeader",
+            "members": {
+                "gas": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "selector": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 2,
+            "type": "struct"
+        },
+        "__main__.ResourceBounds": {
+            "full_name": "__main__.ResourceBounds",
+            "members": {
+                "max_amount": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "max_price_per_unit": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                },
+                "resource": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 3,
+            "type": "struct"
+        },
+        "__main__.ResponseHeader": {
+            "full_name": "__main__.ResponseHeader",
+            "members": {
+                "failure_flag": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "gas": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 2,
+            "type": "struct"
+        },
+        "__main__.SECP256K1_ADD_SELECTOR": {
+            "type": "const",
+            "value": 25809826906887716310825919588
+        },
+        "__main__.SECP256K1_GET_POINT_FROM_X_SELECTOR": {
+            "type": "const",
+            "value": 31202166147520941793195011415201397765240582401125720
+        },
+        "__main__.SECP256K1_GET_XY_SELECTOR": {
+            "type": "const",
+            "value": 1691472816169793376146313253771385
+        },
+        "__main__.SECP256K1_MUL_SELECTOR": {
+            "type": "const",
+            "value": 25809826906887716310826710380
+        },
+        "__main__.SECP256K1_NEW_SELECTOR": {
+            "type": "const",
+            "value": 25809826906887716310826771831
+        },
+        "__main__.SECP256R1_ADD_SELECTOR": {
+            "type": "const",
+            "value": 25809826906887716340890690660
+        },
+        "__main__.SECP256R1_GET_POINT_FROM_X_SELECTOR": {
+            "type": "const",
+            "value": 31202166147520941829541089424945191164954056705666392
+        },
+        "__main__.SECP256R1_GET_XY_SELECTOR": {
+            "type": "const",
+            "value": 1691472816169793378116638090745977
+        },
+        "__main__.SECP256R1_MUL_SELECTOR": {
+            "type": "const",
+            "value": 25809826906887716340891481452
+        },
+        "__main__.SECP256R1_NEW_SELECTOR": {
+            "type": "const",
+            "value": 25809826906887716340891542903
+        },
+        "__main__.SEND_MESSAGE_TO_L1_SELECTOR": {
+            "type": "const",
+            "value": 433017908768303439907196859243777073
+        },
+        "__main__.STORAGE_READ_SELECTOR": {
+            "type": "const",
+            "value": 100890693370601760042082660
+        },
+        "__main__.STORAGE_WRITE_SELECTOR": {
+            "type": "const",
+            "value": 25828017502874050592466629733
+        },
+        "__main__.Secp256k1AddRequest": {
+            "cairo_type": "__main__.SecpAddRequest",
+            "type": "type_definition"
+        },
+        "__main__.Secp256k1AddResponse": {
+            "cairo_type": "__main__.SecpOpResponse",
+            "type": "type_definition"
+        },
+        "__main__.Secp256k1GetPointFromXRequest": {
+            "cairo_type": "__main__.SecpGetPointFromXRequest",
+            "type": "type_definition"
+        },
+        "__main__.Secp256k1GetXyRequest": {
+            "cairo_type": "__main__.SecpGetXyRequest",
+            "type": "type_definition"
+        },
+        "__main__.Secp256k1GetXyResponse": {
+            "cairo_type": "__main__.SecpGetXyResponse",
+            "type": "type_definition"
+        },
+        "__main__.Secp256k1MulRequest": {
+            "cairo_type": "__main__.SecpMulRequest",
+            "type": "type_definition"
+        },
+        "__main__.Secp256k1MulResponse": {
+            "cairo_type": "__main__.SecpOpResponse",
+            "type": "type_definition"
+        },
+        "__main__.Secp256k1NewRequest": {
+            "cairo_type": "__main__.SecpNewRequest",
+            "type": "type_definition"
+        },
+        "__main__.Secp256k1NewResponse": {
+            "cairo_type": "__main__.SecpNewResponse",
+            "type": "type_definition"
+        },
+        "__main__.Secp256r1AddRequest": {
+            "cairo_type": "__main__.SecpAddRequest",
+            "type": "type_definition"
+        },
+        "__main__.Secp256r1AddResponse": {
+            "cairo_type": "__main__.SecpOpResponse",
+            "type": "type_definition"
+        },
+        "__main__.Secp256r1GetPointFromXRequest": {
+            "cairo_type": "__main__.SecpGetPointFromXRequest",
+            "type": "type_definition"
+        },
+        "__main__.Secp256r1GetXyRequest": {
+            "cairo_type": "__main__.SecpGetXyRequest",
+            "type": "type_definition"
+        },
+        "__main__.Secp256r1GetXyResponse": {
+            "cairo_type": "__main__.SecpGetXyResponse",
+            "type": "type_definition"
+        },
+        "__main__.Secp256r1MulRequest": {
+            "cairo_type": "__main__.SecpMulRequest",
+            "type": "type_definition"
+        },
+        "__main__.Secp256r1MulResponse": {
+            "cairo_type": "__main__.SecpOpResponse",
+            "type": "type_definition"
+        },
+        "__main__.Secp256r1NewRequest": {
+            "cairo_type": "__main__.SecpNewRequest",
+            "type": "type_definition"
+        },
+        "__main__.Secp256r1NewResponse": {
+            "cairo_type": "__main__.SecpNewResponse",
+            "type": "type_definition"
+        },
+        "__main__.SecpAddRequest": {
+            "full_name": "__main__.SecpAddRequest",
+            "members": {
+                "p0": {
+                    "cairo_type": "starkware.cairo.common.cairo_secp.ec_point.EcPoint*",
+                    "offset": 0
+                },
+                "p1": {
+                    "cairo_type": "starkware.cairo.common.cairo_secp.ec_point.EcPoint*",
+                    "offset": 1
+                }
+            },
+            "size": 2,
+            "type": "struct"
+        },
+        "__main__.SecpGetPointFromXRequest": {
+            "full_name": "__main__.SecpGetPointFromXRequest",
+            "members": {
+                "x": {
+                    "cairo_type": "starkware.cairo.common.uint256.Uint256",
+                    "offset": 0
+                },
+                "y_parity": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                }
+            },
+            "size": 3,
+            "type": "struct"
+        },
+        "__main__.SecpGetXyRequest": {
+            "full_name": "__main__.SecpGetXyRequest",
+            "members": {
+                "ec_point": {
+                    "cairo_type": "starkware.cairo.common.cairo_secp.ec_point.EcPoint*",
+                    "offset": 0
+                }
+            },
+            "size": 1,
+            "type": "struct"
+        },
+        "__main__.SecpGetXyResponse": {
+            "full_name": "__main__.SecpGetXyResponse",
+            "members": {
+                "x": {
+                    "cairo_type": "starkware.cairo.common.uint256.Uint256",
+                    "offset": 0
+                },
+                "y": {
+                    "cairo_type": "starkware.cairo.common.uint256.Uint256",
+                    "offset": 2
+                }
+            },
+            "size": 4,
+            "type": "struct"
+        },
+        "__main__.SecpMulRequest": {
+            "full_name": "__main__.SecpMulRequest",
+            "members": {
+                "p": {
+                    "cairo_type": "starkware.cairo.common.cairo_secp.ec_point.EcPoint*",
+                    "offset": 0
+                },
+                "scalar": {
+                    "cairo_type": "starkware.cairo.common.uint256.Uint256",
+                    "offset": 1
+                }
+            },
+            "size": 3,
+            "type": "struct"
+        },
+        "__main__.SecpNewRequest": {
+            "full_name": "__main__.SecpNewRequest",
+            "members": {
+                "x": {
+                    "cairo_type": "starkware.cairo.common.uint256.Uint256",
+                    "offset": 0
+                },
+                "y": {
+                    "cairo_type": "starkware.cairo.common.uint256.Uint256",
+                    "offset": 2
+                }
+            },
+            "size": 4,
+            "type": "struct"
+        },
+        "__main__.SecpNewResponse": {
+            "full_name": "__main__.SecpNewResponse",
+            "members": {
+                "ec_point": {
+                    "cairo_type": "starkware.cairo.common.cairo_secp.ec_point.EcPoint*",
+                    "offset": 1
+                },
+                "not_on_curve": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 2,
+            "type": "struct"
+        },
+        "__main__.SecpOpResponse": {
+            "full_name": "__main__.SecpOpResponse",
+            "members": {
+                "ec_point": {
+                    "cairo_type": "starkware.cairo.common.cairo_secp.ec_point.EcPoint*",
+                    "offset": 0
+                }
+            },
+            "size": 1,
+            "type": "struct"
+        },
+        "__main__.SendMessageToL1Request": {
+            "full_name": "__main__.SendMessageToL1Request",
+            "members": {
+                "payload_end": {
+                    "cairo_type": "felt*",
+                    "offset": 2
+                },
+                "payload_start": {
+                    "cairo_type": "felt*",
+                    "offset": 1
+                },
+                "to_address": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 3,
+            "type": "struct"
+        },
+        "__main__.StorageReadRequest": {
+            "full_name": "__main__.StorageReadRequest",
+            "members": {
+                "key": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "reserved": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 2,
+            "type": "struct"
+        },
+        "__main__.StorageReadResponse": {
+            "full_name": "__main__.StorageReadResponse",
+            "members": {
+                "value": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 1,
+            "type": "struct"
+        },
+        "__main__.StorageWriteRequest": {
+            "full_name": "__main__.StorageWriteRequest",
+            "members": {
+                "key": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "reserved": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "value": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                }
+            },
+            "size": 3,
+            "type": "struct"
+        },
+        "__main__.TxInfo": {
+            "full_name": "__main__.TxInfo",
+            "members": {
+                "account_contract_address": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "account_deployment_data_end": {
+                    "cairo_type": "felt*",
+                    "offset": 16
+                },
+                "account_deployment_data_start": {
+                    "cairo_type": "felt*",
+                    "offset": 15
+                },
+                "chain_id": {
+                    "cairo_type": "felt",
+                    "offset": 6
+                },
+                "fee_data_availability_mode": {
+                    "cairo_type": "felt",
+                    "offset": 14
+                },
+                "max_fee": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                },
+                "nonce": {
+                    "cairo_type": "felt",
+                    "offset": 7
+                },
+                "nonce_data_availability_mode": {
+                    "cairo_type": "felt",
+                    "offset": 13
+                },
+                "paymaster_data_end": {
+                    "cairo_type": "felt*",
+                    "offset": 12
+                },
+                "paymaster_data_start": {
+                    "cairo_type": "felt*",
+                    "offset": 11
+                },
+                "resource_bounds_end": {
+                    "cairo_type": "__main__.ResourceBounds*",
+                    "offset": 9
+                },
+                "resource_bounds_start": {
+                    "cairo_type": "__main__.ResourceBounds*",
+                    "offset": 8
+                },
+                "signature_end": {
+                    "cairo_type": "felt*",
+                    "offset": 4
+                },
+                "signature_start": {
+                    "cairo_type": "felt*",
+                    "offset": 3
+                },
+                "tip": {
+                    "cairo_type": "felt",
+                    "offset": 10
+                },
+                "transaction_hash": {
+                    "cairo_type": "felt",
+                    "offset": 5
+                },
+                "version": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 17,
+            "type": "struct"
+        },
+        "__main__.Uint256": {
+            "destination": "starkware.cairo.common.uint256.Uint256",
+            "type": "alias"
+        },
+        "starkware.cairo.common.bitwise.ALL_ONES": {
+            "type": "const",
+            "value": -106710729501573572985208420194530329073740042555888586719234
+        },
+        "starkware.cairo.common.bitwise.BitwiseBuiltin": {
+            "destination": "starkware.cairo.common.cairo_builtins.BitwiseBuiltin",
+            "type": "alias"
+        },
+        "starkware.cairo.common.bool.FALSE": {
+            "type": "const",
+            "value": 0
+        },
+        "starkware.cairo.common.bool.TRUE": {
+            "type": "const",
+            "value": 1
+        },
+        "starkware.cairo.common.cairo_builtins.BitwiseBuiltin": {
+            "full_name": "starkware.cairo.common.cairo_builtins.BitwiseBuiltin",
+            "members": {
+                "x": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "x_and_y": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                },
+                "x_or_y": {
+                    "cairo_type": "felt",
+                    "offset": 4
+                },
+                "x_xor_y": {
+                    "cairo_type": "felt",
+                    "offset": 3
+                },
+                "y": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                }
+            },
+            "size": 5,
+            "type": "struct"
+        },
+        "starkware.cairo.common.cairo_builtins.EcOpBuiltin": {
+            "full_name": "starkware.cairo.common.cairo_builtins.EcOpBuiltin",
+            "members": {
+                "m": {
+                    "cairo_type": "felt",
+                    "offset": 4
+                },
+                "p": {
+                    "cairo_type": "starkware.cairo.common.ec_point.EcPoint",
+                    "offset": 0
+                },
+                "q": {
+                    "cairo_type": "starkware.cairo.common.ec_point.EcPoint",
+                    "offset": 2
+                },
+                "r": {
+                    "cairo_type": "starkware.cairo.common.ec_point.EcPoint",
+                    "offset": 5
+                }
+            },
+            "size": 7,
+            "type": "struct"
+        },
+        "starkware.cairo.common.cairo_builtins.EcPoint": {
+            "destination": "starkware.cairo.common.ec_point.EcPoint",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_builtins.HashBuiltin": {
+            "full_name": "starkware.cairo.common.cairo_builtins.HashBuiltin",
+            "members": {
+                "result": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                },
+                "x": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "y": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                }
+            },
+            "size": 3,
+            "type": "struct"
+        },
+        "starkware.cairo.common.cairo_builtins.KeccakBuiltin": {
+            "full_name": "starkware.cairo.common.cairo_builtins.KeccakBuiltin",
+            "members": {
+                "input": {
+                    "cairo_type": "starkware.cairo.common.keccak_state.KeccakBuiltinState",
+                    "offset": 0
+                },
+                "output": {
+                    "cairo_type": "starkware.cairo.common.keccak_state.KeccakBuiltinState",
+                    "offset": 8
+                }
+            },
+            "size": 16,
+            "type": "struct"
+        },
+        "starkware.cairo.common.cairo_builtins.KeccakBuiltinState": {
+            "destination": "starkware.cairo.common.keccak_state.KeccakBuiltinState",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_builtins.PoseidonBuiltin": {
+            "full_name": "starkware.cairo.common.cairo_builtins.PoseidonBuiltin",
+            "members": {
+                "input": {
+                    "cairo_type": "starkware.cairo.common.poseidon_state.PoseidonBuiltinState",
+                    "offset": 0
+                },
+                "output": {
+                    "cairo_type": "starkware.cairo.common.poseidon_state.PoseidonBuiltinState",
+                    "offset": 3
+                }
+            },
+            "size": 6,
+            "type": "struct"
+        },
+        "starkware.cairo.common.cairo_builtins.PoseidonBuiltinState": {
+            "destination": "starkware.cairo.common.poseidon_state.PoseidonBuiltinState",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_builtins.SignatureBuiltin": {
+            "full_name": "starkware.cairo.common.cairo_builtins.SignatureBuiltin",
+            "members": {
+                "message": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "pub_key": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 2,
+            "type": "struct"
+        },
+        "starkware.cairo.common.cairo_secp.bigint.BASE": {
+            "destination": "starkware.cairo.common.cairo_secp.constants.BASE",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.bigint.BigInt3": {
+            "destination": "starkware.cairo.common.cairo_secp.bigint3.BigInt3",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.bigint.RC_BOUND": {
+            "destination": "starkware.cairo.common.math_cmp.RC_BOUND",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.bigint.Uint256": {
+            "destination": "starkware.cairo.common.uint256.Uint256",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.bigint.UnreducedBigInt3": {
+            "destination": "starkware.cairo.common.cairo_secp.bigint3.UnreducedBigInt3",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.bigint.UnreducedBigInt5": {
+            "full_name": "starkware.cairo.common.cairo_secp.bigint.UnreducedBigInt5",
+            "members": {
+                "d0": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "d1": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "d2": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                },
+                "d3": {
+                    "cairo_type": "felt",
+                    "offset": 3
+                },
+                "d4": {
+                    "cairo_type": "felt",
+                    "offset": 4
+                }
+            },
+            "size": 5,
+            "type": "struct"
+        },
+        "starkware.cairo.common.cairo_secp.bigint.assert_nn": {
+            "destination": "starkware.cairo.common.math.assert_nn",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.bigint.assert_nn_le": {
+            "destination": "starkware.cairo.common.math.assert_nn_le",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.bigint.unsigned_div_rem": {
+            "destination": "starkware.cairo.common.math.unsigned_div_rem",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.bigint3.BigInt3": {
+            "full_name": "starkware.cairo.common.cairo_secp.bigint3.BigInt3",
+            "members": {
+                "d0": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "d1": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "d2": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                }
+            },
+            "size": 3,
+            "type": "struct"
+        },
+        "starkware.cairo.common.cairo_secp.bigint3.SumBigInt3": {
+            "full_name": "starkware.cairo.common.cairo_secp.bigint3.SumBigInt3",
+            "members": {
+                "d0": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "d1": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "d2": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                }
+            },
+            "size": 3,
+            "type": "struct"
+        },
+        "starkware.cairo.common.cairo_secp.bigint3.UnreducedBigInt3": {
+            "full_name": "starkware.cairo.common.cairo_secp.bigint3.UnreducedBigInt3",
+            "members": {
+                "d0": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "d1": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "d2": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                }
+            },
+            "size": 3,
+            "type": "struct"
+        },
+        "starkware.cairo.common.cairo_secp.constants.BASE": {
+            "type": "const",
+            "value": 77371252455336267181195264
+        },
+        "starkware.cairo.common.cairo_secp.constants.BETA": {
+            "type": "const",
+            "value": 7
+        },
+        "starkware.cairo.common.cairo_secp.constants.N0": {
+            "type": "const",
+            "value": 10428087374290690730508609
+        },
+        "starkware.cairo.common.cairo_secp.constants.N1": {
+            "type": "const",
+            "value": 77371252455330678278691517
+        },
+        "starkware.cairo.common.cairo_secp.constants.N2": {
+            "type": "const",
+            "value": 19342813113834066795298815
+        },
+        "starkware.cairo.common.cairo_secp.constants.P0": {
+            "type": "const",
+            "value": 77371252455336262886226991
+        },
+        "starkware.cairo.common.cairo_secp.constants.P1": {
+            "type": "const",
+            "value": 77371252455336267181195263
+        },
+        "starkware.cairo.common.cairo_secp.constants.P2": {
+            "type": "const",
+            "value": 19342813113834066795298815
+        },
+        "starkware.cairo.common.cairo_secp.constants.SECP_PRIME_HIGH": {
+            "type": "const",
+            "value": 340282366920938463463374607431768211455
+        },
+        "starkware.cairo.common.cairo_secp.constants.SECP_PRIME_LOW": {
+            "type": "const",
+            "value": 340282366920938463463374607427473243183
+        },
+        "starkware.cairo.common.cairo_secp.constants.SECP_REM": {
+            "type": "const",
+            "value": 4294968273
+        },
+        "starkware.cairo.common.cairo_secp.ec.BigInt3": {
+            "destination": "starkware.cairo.common.cairo_secp.bigint3.BigInt3",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.ec.EcPoint": {
+            "destination": "starkware.cairo.common.cairo_secp.ec_point.EcPoint",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.ec.SumBigInt3": {
+            "destination": "starkware.cairo.common.cairo_secp.bigint3.SumBigInt3",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.ec.Uint256": {
+            "destination": "starkware.cairo.common.uint256.Uint256",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.ec.UnreducedBigInt3": {
+            "destination": "starkware.cairo.common.cairo_secp.bigint3.UnreducedBigInt3",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.ec.alloc": {
+            "destination": "starkware.cairo.common.alloc.alloc",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.ec.assert_nn_le": {
+            "destination": "starkware.cairo.common.math.assert_nn_le",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.ec.is_zero": {
+            "destination": "starkware.cairo.common.cairo_secp.field.is_zero",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.ec.nondet_bigint3": {
+            "destination": "starkware.cairo.common.cairo_secp.bigint.nondet_bigint3",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.ec.unreduced_mul": {
+            "destination": "starkware.cairo.common.cairo_secp.field.unreduced_mul",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.ec.unreduced_sqr": {
+            "destination": "starkware.cairo.common.cairo_secp.field.unreduced_sqr",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.ec.verify_zero": {
+            "destination": "starkware.cairo.common.cairo_secp.field.verify_zero",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.ec_point.BigInt3": {
+            "destination": "starkware.cairo.common.cairo_secp.bigint3.BigInt3",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.ec_point.EcPoint": {
+            "full_name": "starkware.cairo.common.cairo_secp.ec_point.EcPoint",
+            "members": {
+                "x": {
+                    "cairo_type": "starkware.cairo.common.cairo_secp.bigint3.BigInt3",
+                    "offset": 0
+                },
+                "y": {
+                    "cairo_type": "starkware.cairo.common.cairo_secp.bigint3.BigInt3",
+                    "offset": 3
+                }
+            },
+            "size": 6,
+            "type": "struct"
+        },
+        "starkware.cairo.common.cairo_secp.field.BASE": {
+            "destination": "starkware.cairo.common.cairo_secp.constants.BASE",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.field.BigInt3": {
+            "destination": "starkware.cairo.common.cairo_secp.bigint3.BigInt3",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.field.P0": {
+            "destination": "starkware.cairo.common.cairo_secp.constants.P0",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.field.P1": {
+            "destination": "starkware.cairo.common.cairo_secp.constants.P1",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.field.P2": {
+            "destination": "starkware.cairo.common.cairo_secp.constants.P2",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.field.SECP_REM": {
+            "destination": "starkware.cairo.common.cairo_secp.constants.SECP_REM",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.field.SumBigInt3": {
+            "destination": "starkware.cairo.common.cairo_secp.bigint3.SumBigInt3",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.field.UnreducedBigInt3": {
+            "destination": "starkware.cairo.common.cairo_secp.bigint3.UnreducedBigInt3",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.field.assert_nn_le": {
+            "destination": "starkware.cairo.common.math.assert_nn_le",
+            "type": "alias"
+        },
+        "starkware.cairo.common.cairo_secp.field.nondet_bigint3": {
+            "destination": "starkware.cairo.common.cairo_secp.bigint.nondet_bigint3",
+            "type": "alias"
+        },
+        "starkware.cairo.common.ec_point.EcPoint": {
+            "full_name": "starkware.cairo.common.ec_point.EcPoint",
+            "members": {
+                "x": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "y": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                }
+            },
+            "size": 2,
+            "type": "struct"
+        },
+        "starkware.cairo.common.keccak_state.KeccakBuiltinState": {
+            "full_name": "starkware.cairo.common.keccak_state.KeccakBuiltinState",
+            "members": {
+                "s0": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "s1": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "s2": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                },
+                "s3": {
+                    "cairo_type": "felt",
+                    "offset": 3
+                },
+                "s4": {
+                    "cairo_type": "felt",
+                    "offset": 4
+                },
+                "s5": {
+                    "cairo_type": "felt",
+                    "offset": 5
+                },
+                "s6": {
+                    "cairo_type": "felt",
+                    "offset": 6
+                },
+                "s7": {
+                    "cairo_type": "felt",
+                    "offset": 7
+                }
+            },
+            "size": 8,
+            "type": "struct"
+        },
+        "starkware.cairo.common.math.FALSE": {
+            "destination": "starkware.cairo.common.bool.FALSE",
+            "type": "alias"
+        },
+        "starkware.cairo.common.math.TRUE": {
+            "destination": "starkware.cairo.common.bool.TRUE",
+            "type": "alias"
+        },
+        "starkware.cairo.common.math_cmp.RC_BOUND": {
+            "type": "const",
+            "value": 340282366920938463463374607431768211456
+        },
+        "starkware.cairo.common.math_cmp.assert_le_felt": {
+            "destination": "starkware.cairo.common.math.assert_le_felt",
+            "type": "alias"
+        },
+        "starkware.cairo.common.math_cmp.assert_lt_felt": {
+            "destination": "starkware.cairo.common.math.assert_lt_felt",
+            "type": "alias"
+        },
+        "starkware.cairo.common.poseidon_state.PoseidonBuiltinState": {
+            "full_name": "starkware.cairo.common.poseidon_state.PoseidonBuiltinState",
+            "members": {
+                "s0": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "s1": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "s2": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                }
+            },
+            "size": 3,
+            "type": "struct"
+        },
+        "starkware.cairo.common.pow.assert_le": {
+            "destination": "starkware.cairo.common.math.assert_le",
+            "type": "alias"
+        },
+        "starkware.cairo.common.pow.get_ap": {
+            "destination": "starkware.cairo.common.registers.get_ap",
+            "type": "alias"
+        },
+        "starkware.cairo.common.pow.get_fp_and_pc": {
+            "destination": "starkware.cairo.common.registers.get_fp_and_pc",
+            "type": "alias"
+        },
+        "starkware.cairo.common.pow.sign": {
+            "destination": "starkware.cairo.common.math.sign",
+            "type": "alias"
+        },
+        "starkware.cairo.common.registers.get_ap": {
+            "destination": "starkware.cairo.lang.compiler.lib.registers.get_ap",
+            "type": "alias"
+        },
+        "starkware.cairo.common.registers.get_fp_and_pc": {
+            "destination": "starkware.cairo.lang.compiler.lib.registers.get_fp_and_pc",
+            "type": "alias"
+        },
+        "starkware.cairo.common.uint256.ALL_ONES": {
+            "type": "const",
+            "value": 340282366920938463463374607431768211455
+        },
+        "starkware.cairo.common.uint256.BitwiseBuiltin": {
+            "destination": "starkware.cairo.common.cairo_builtins.BitwiseBuiltin",
+            "type": "alias"
+        },
+        "starkware.cairo.common.uint256.HALF_SHIFT": {
+            "type": "const",
+            "value": 18446744073709551616
+        },
+        "starkware.cairo.common.uint256.SHIFT": {
+            "type": "const",
+            "value": 340282366920938463463374607431768211456
+        },
+        "starkware.cairo.common.uint256.Uint256": {
+            "full_name": "starkware.cairo.common.uint256.Uint256",
+            "members": {
+                "high": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "low": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 2,
+            "type": "struct"
+        },
+        "starkware.cairo.common.uint256.assert_in_range": {
+            "destination": "starkware.cairo.common.math.assert_in_range",
+            "type": "alias"
+        },
+        "starkware.cairo.common.uint256.assert_le": {
+            "destination": "starkware.cairo.common.math.assert_le",
+            "type": "alias"
+        },
+        "starkware.cairo.common.uint256.assert_nn_le": {
+            "destination": "starkware.cairo.common.math.assert_nn_le",
+            "type": "alias"
+        },
+        "starkware.cairo.common.uint256.assert_not_zero": {
+            "destination": "starkware.cairo.common.math.assert_not_zero",
+            "type": "alias"
+        },
+        "starkware.cairo.common.uint256.bitwise_and": {
+            "destination": "starkware.cairo.common.bitwise.bitwise_and",
+            "type": "alias"
+        },
+        "starkware.cairo.common.uint256.bitwise_or": {
+            "destination": "starkware.cairo.common.bitwise.bitwise_or",
+            "type": "alias"
+        },
+        "starkware.cairo.common.uint256.bitwise_xor": {
+            "destination": "starkware.cairo.common.bitwise.bitwise_xor",
+            "type": "alias"
+        },
+        "starkware.cairo.common.uint256.get_ap": {
+            "destination": "starkware.cairo.common.registers.get_ap",
+            "type": "alias"
+        },
+        "starkware.cairo.common.uint256.get_fp_and_pc": {
+            "destination": "starkware.cairo.common.registers.get_fp_and_pc",
+            "type": "alias"
+        },
+        "starkware.cairo.common.uint256.is_le": {
+            "destination": "starkware.cairo.common.math_cmp.is_le",
+            "type": "alias"
+        },
+        "starkware.cairo.common.uint256.pow": {
+            "destination": "starkware.cairo.common.pow.pow",
+            "type": "alias"
+        },
+        "starkware.cairo.common.uint256.split_felt": {
+            "destination": "starkware.cairo.common.math.split_felt",
+            "type": "alias"
+        }
+    },
+    "main_scope": "__main__",
+    "prime": "0x800000000000011000000000000000000000000000000000000000000000001",
+    "reference_manager": {
+        "references": []
+    }
+}
