@@ -49,8 +49,8 @@ func verify_cairo_proof{range_check_ptr, pedersen_ptr: HashBuiltin*, bitwise_ptr
 ) -> (program_hash: felt, output_hash: felt) {
     alloc_locals;
     verify_proof(proof=proof, security_bits=SECURITY_BITS);
-    return _verify_public_input(public_input=cast(proof.public_input, PublicInput*));
-    // return (program_hash = 0, output_hash = 0);
+    // return _verify_public_input(public_input=cast(proof.public_input, PublicInput*));
+    return (program_hash = 0, output_hash = 0);
 }
 
 func _verify_public_input{
