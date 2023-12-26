@@ -1,0 +1,266 @@
+diff --git a/src/starkware/cairo/bootloaders/simple_bootloader/execute_task.cairo b/src/starkware/cairo/bootloaders/simple_bootloader/execute_task.cairo
+index fd28f783f2..693a0c77aa 100644
+--- a/src/starkware/cairo/bootloaders/simple_bootloader/execute_task.cairo
++++ b/src/starkware/cairo/bootloaders/simple_bootloader/execute_task.cairo
+@@ -113,7 +113,6 @@ func execute_task{builtin_ptrs: BuiltinData*, self_range_check_ptr}(
+     select_input_builtins(
+         all_encodings=builtin_encodings,
+         all_ptrs=&pre_execution_builtin_ptrs,
+-        n_all_builtins=BuiltinData.SIZE,
+         selected_encodings=builtin_list,
+         n_selected_builtins=n_builtins,
+     );
+diff --git a/src/starkware/cairo/builtin_selection/select_input_builtins.cairo b/src/starkware/cairo/builtin_selection/select_input_builtins.cairo
+index 6a189337d9..5f8c3cf7c3 100644
+--- a/src/starkware/cairo/builtin_selection/select_input_builtins.cairo
++++ b/src/starkware/cairo/builtin_selection/select_input_builtins.cairo
+@@ -3,33 +3,35 @@ from starkware.cairo.common.registers import get_fp_and_pc
+ 
+ // A wrapper for 'inner_select_builtins' function (see its documentation).
+ // Returns the selected builtin pointers (e.g., if n_selected_builtins=2, returns two values).
++// Note that the function assumes that the total number of builtins is 4, and so the length of
++// all_encodings, all_ptrs must be 4.
+ func select_input_builtins(
+-    all_encodings: felt*,
+-    all_ptrs: felt*,
+-    n_all_builtins: felt,
+-    selected_encodings: felt*,
+-    n_selected_builtins,
++    all_encodings: felt*, all_ptrs: felt*, selected_encodings: felt*, n_selected_builtins
+ ) {
++
++    // Total number of optional builtins.
++    const N_BUILTINS = 8;
+     // Number of memory cells used, without taking the inner function memory into account.
+-    const FUNC_MEMORY_WITHOUT_INNER_FUNC = 11;
++    const FUNC_MEMORY_WITHOUT_INNER_FUNC = 9;
+     const INNER_FUNC_MEMORY_PER_ITERATION = inner_select_builtins.FUNC_MEMORY_WITH_BUILTINS;
+     const INNER_FUNC_MEMORY_FINAL_ITERATION = inner_select_builtins.FUNC_MEMORY_NO_BUILTINS;
+-    // 'inner_select_builtins' has n_all_builtins iterations, until the final halting one, when
+-    // called with n_builtins = n_all_builtins.
+-    let inner_func_memory = n_all_builtins * INNER_FUNC_MEMORY_PER_ITERATION +
++    // 'inner_select_builtins' has N_BUILTINS iterations, until the final halting one, when called
++    // with n_builtins = N_BUILTINS.
++    const INNER_FUNC_MEMORY = N_BUILTINS * INNER_FUNC_MEMORY_PER_ITERATION +
+         INNER_FUNC_MEMORY_FINAL_ITERATION;
+-    let total_func_memory = inner_func_memory + FUNC_MEMORY_WITHOUT_INNER_FUNC;
++    const TOTAL_FUNC_MEMORY = FUNC_MEMORY_WITHOUT_INNER_FUNC + INNER_FUNC_MEMORY;
+ 
+     let frame = call get_fp_and_pc;
+     // The selected builtin pointers are the return values at the end of the function memory.
+-    let selected_ptrs = frame.fp_val + total_func_memory;
++    let selected_ptrs = cast(frame.fp_val + TOTAL_FUNC_MEMORY, felt*);
+     %{ vm_enter_scope({'n_selected_builtins': ids.n_selected_builtins}) %}
+     let inner_ret = inner_select_builtins(
+         all_encodings=all_encodings,
+         all_ptrs=all_ptrs,
+         selected_encodings=selected_encodings,
+         selected_ptrs=selected_ptrs,
+-        n_builtins=n_all_builtins,
++        n_builtins=N_BUILTINS,
+     );
+     %{ vm_exit_scope() %}
+     // Assert that the correct number of builtins was selected.
+diff --git a/src/starkware/cairo/stark_verifier/core/channel.cairo b/src/starkware/cairo/stark_verifier/core/channel.cairo
+index b01c44f5ae..0c4c6e03b7 100644
+--- a/src/starkware/cairo/stark_verifier/core/channel.cairo
++++ b/src/starkware/cairo/stark_verifier/core/channel.cairo
+@@ -85,11 +85,10 @@ func random_felts_to_prover{
+     }
+ }
+ 
+-// This in an inner function, it should not be used. Use read_felt_from_prover or
+-// read_montgomery_form_felt_from_prover instead.
+-func read_felt_from_prover_inner{
++// Reads a truncated hash from the prover. See Channel.
++func read_truncated_hash_from_prover{
+     range_check_ptr, blake2s_ptr: felt*, bitwise_ptr: BitwiseBuiltin*, channel: Channel
+-}(value: felt) -> () {
++}(value: ChannelUnsentFelt) -> (value: ChannelSentFelt) {
+     alloc_locals;
+     let (data: felt*) = alloc();
+     let data_start = data;
+@@ -98,25 +97,30 @@ func read_felt_from_prover_inner{
+         Uint256(low=channel.digest.low + 1, high=channel.digest.high)
+     );
+ 
+-    blake2s_add_felt{data=data}(num=value, bigend=1);
++    // value encodes the 160 least significant bits of a 256-bit hash.
++    let (high, low) = split_felt(value.value);
++    blake2s_add_uint256_bigend{data=data}(Uint256(low=low, high=high));
+     let (digest) = blake2s_bigend(data=data_start, n_bytes=64);
+     let channel = Channel(digest=digest, counter=0);
+-    return ();
++    return (value=ChannelSentFelt(value.value));
+ }
+ 
+ // Reads a field element from the prover. See Channel.
+ func read_felt_from_prover{
+     range_check_ptr, blake2s_ptr: felt*, bitwise_ptr: BitwiseBuiltin*, channel: Channel
+ }(value: ChannelUnsentFelt) -> (value: ChannelSentFelt) {
+-    read_felt_from_prover_inner(value=value.value);
+-    return (value=ChannelSentFelt(value.value));
+-}
+-
+-// Reads a montgomery form represented field element from the prover. See Channel.
+-func read_montgomery_form_felt_from_prover{
+-    range_check_ptr, blake2s_ptr: felt*, bitwise_ptr: BitwiseBuiltin*, channel: Channel
+-}(value: ChannelUnsentFelt) -> (value: ChannelSentFelt) {
+-    read_felt_from_prover_inner(value=value.value * MONTGOMERY_R);
++    alloc_locals;
++    let (data: felt*) = alloc();
++    let data_start = data;
++    assert_not_equal(channel.digest.low, 2 ** 128 - 1);
++    blake2s_add_uint256_bigend{data=data}(
++        Uint256(low=channel.digest.low + 1, high=channel.digest.high)
++    );
++    // The prover uses Montgomery form to generate randomness.
++    blake2s_add_felt{data=data}(num=value.value * MONTGOMERY_R, bigend=1);
++    let (digest) = blake2s_bigend(data=data_start, n_bytes=64);
++    let channel = Channel(digest=digest, counter=0);
+     return (value=ChannelSentFelt(value.value));
+ }
+ 
+@@ -139,7 +143,7 @@ func read_uint64_from_prover{
+     return (value=ChannelSentFelt(value.value));
+ }
+ 
+-// Reads multiple field elements from the prover. See Channel.
++// Reads multiple field elements from the prover. Repeats read_felt_from_prover. See Channel.
+ func read_felts_from_prover{
+     range_check_ptr, blake2s_ptr: felt*, bitwise_ptr: BitwiseBuiltin*, channel: Channel
+ }(n_values: felt, values: ChannelUnsentFelt*) -> (values: ChannelSentFelt*) {
+@@ -154,7 +158,7 @@ func read_felts_from_prover_inner{
+         return ();
+     }
+ 
+-    let (value) = read_montgomery_form_felt_from_prover(values[0]);
++    let (value) = read_felt_from_prover(values[0]);
+     return read_felts_from_prover_inner(n_values=n_values - 1, values=&values[1]);
+ }
+ 
+diff --git a/src/starkware/cairo/stark_verifier/core/channel_test.cairo b/src/starkware/cairo/stark_verifier/core/channel_test.cairo
+index 95b9c98eb7..3bc3ea7f56 100644
+--- a/src/starkware/cairo/stark_verifier/core/channel_test.cairo
++++ b/src/starkware/cairo/stark_verifier/core/channel_test.cairo
+@@ -8,9 +8,9 @@ from starkware.cairo.stark_verifier.core.channel import (
+     channel_new,
+     random_felts_to_prover,
+     random_uint256_to_prover,
+-    read_felt_from_prover,
+     read_felt_vector_from_prover,
+     read_felts_from_prover,
++    read_truncated_hash_from_prover,
+ )
+ 
+ func test_to{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, blake2s_ptr: felt*}() {
+@@ -46,7 +46,7 @@ func test_from{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, blake2s_ptr: felt*
+         assert channel.digest = original_channel.digest;
+         assert channel.counter = original_channel.counter;
+ 
+-        let (value) = read_felt_from_prover(ChannelUnsentFelt(2 ** 160 - 1));
++        let (value) = read_truncated_hash_from_prover(ChannelUnsentFelt(2 ** 160 - 1));
+         assert value = ChannelSentFelt(2 ** 160 - 1);
+         assert channel.digest = Uint256(
+             56167004286255481276482511662906702549, 234392798194350380932282913623756516436
+diff --git a/src/starkware/cairo/stark_verifier/core/stark.cairo b/src/starkware/cairo/stark_verifier/core/stark.cairo
+index 5513851a96..e3f3e31bb8 100644
+--- a/src/starkware/cairo/stark_verifier/core/stark.cairo
++++ b/src/starkware/cairo/stark_verifier/core/stark.cairo
+@@ -55,6 +55,7 @@ from starkware.cairo.stark_verifier.core.table_commitment import (
+     table_commit,
+     table_decommit,
+ )
++from starkware.cairo.stark_verifier.core.utils import compute_powers_array
+ 
+ // Protocol components:
+ // ======================
+@@ -221,8 +222,13 @@ func stark_commit{
+     );
+ 
+     // Generate interaction values after traces commitment.
++    let (composition_alpha: felt*) = alloc();
++    random_felts_to_prover(n_elements=1, elements=composition_alpha);
+     let (traces_coefficients: felt*) = alloc();
+-    random_felts_to_prover(n_elements=air.n_constraints, elements=traces_coefficients);
++    compute_powers_array(
++        data_ptr=traces_coefficients, alpha=[composition_alpha], cur=1, n=air.n_constraints
++    );
++
+     let (interaction_after_traces: InteractionValuesAfterTraces*) = alloc();
+     assert [interaction_after_traces] = InteractionValuesAfterTraces(
+         coefficients=traces_coefficients
+@@ -258,8 +264,10 @@ func stark_commit{
+     );
+ 
+     // Generate interaction values after OODS.
++    let (oods_alpha: felt*) = alloc();
++    random_felts_to_prover(n_elements=1, elements=oods_alpha);
+     let (oods_coefficients: felt*) = alloc();
+-    random_felts_to_prover(n_elements=n_oods_values, elements=oods_coefficients);
++    compute_powers_array(data_ptr=oods_coefficients, alpha=[oods_alpha], cur=1, n=n_oods_values);
+     tempvar interaction_after_oods = new InteractionValuesAfterOods(coefficients=oods_coefficients);
+ 
+     // Read fri commitment.
+diff --git a/src/starkware/cairo/stark_verifier/core/table_commitment.cairo b/src/starkware/cairo/stark_verifier/core/table_commitment.cairo
+index 06a624b0ae..4bcfc0ac0e 100644
+--- a/src/starkware/cairo/stark_verifier/core/table_commitment.cairo
++++ b/src/starkware/cairo/stark_verifier/core/table_commitment.cairo
+@@ -152,7 +152,7 @@ func generate_vector_queries{range_check_ptr, blake2s_ptr: felt*, bitwise_ptr: B
+     blake2s_add_felts{data=data}(n_elements=n_columns, elements=values, bigend=1);
+     let (hash) = blake2s_bigend(data=data_start, n_bytes=32 * n_columns);
+ 
+-    // Truncate hash - convert value to felt, by taking the 160 least significant bits.
++    // Truncate hash - convert value to felt, by taking the least significant 160 bits.
+     let (high_h, high_l) = unsigned_div_rem(hash.high, 2 ** 32);
+     assert vector_queries.value = high_l * 2 ** 128 + hash.low;
+ 
+diff --git a/src/starkware/cairo/stark_verifier/core/utils.cairo b/src/starkware/cairo/stark_verifier/core/utils.cairo
+index bab705c0ed..db2cc510cd 100644
+--- a/src/starkware/cairo/stark_verifier/core/utils.cairo
++++ b/src/starkware/cairo/stark_verifier/core/utils.cairo
+@@ -30,3 +30,11 @@ func bit_reverse_u64{bitwise_ptr: BitwiseBuiltin*}(num: felt) -> (res: felt) {
+     // Combine in reverse.
+     return (res=num / 2 ** 63);
+ }
++
++func compute_powers_array(data_ptr: felt*, alpha: felt, cur: felt, n: felt) -> () {
++    if (n == 0) {
++        return ();
++    }
++    assert [data_ptr] = cur;
++    return compute_powers_array(data_ptr=data_ptr + 1, alpha=alpha, cur=cur * alpha, n=n - 1);
++}
+diff --git a/src/starkware/cairo/stark_verifier/core/vector_commitment.cairo b/src/starkware/cairo/stark_verifier/core/vector_commitment.cairo
+index 6cc4fddd84..b43733a32e 100644
+--- a/src/starkware/cairo/stark_verifier/core/vector_commitment.cairo
++++ b/src/starkware/cairo/stark_verifier/core/vector_commitment.cairo
+@@ -14,7 +14,7 @@ from starkware.cairo.stark_verifier.core.channel import (
+     Channel,
+     ChannelSentFelt,
+     ChannelUnsentFelt,
+-    read_felt_from_prover,
++    read_truncated_hash_from_prover,
+ )
+ 
+ // Commitment values for a vector commitment. Used to generate a commitment by "reading" these
+@@ -70,7 +70,9 @@ func vector_commit{
+ }(unsent_commitment: VectorUnsentCommitment, config: VectorCommitmentConfig*) -> (
+     res: VectorCommitment*
+ ) {
+-    let (commitment_hash_value) = read_felt_from_prover(value=unsent_commitment.commitment_hash);
++    let (commitment_hash_value) = read_truncated_hash_from_prover(
++        value=unsent_commitment.commitment_hash
++    );
+     return (res=new VectorCommitment(config=config, commitment_hash=commitment_hash_value));
+ }
+ 
+@@ -123,7 +125,7 @@ func vector_commitment_decommit{
+     let n_verifier_friendly_layers = calc_n_verifier_friendly_layers(
+         n_columns=n_columns,
+         n_verifier_friendly_commitment_layers=config.n_verifier_friendly_commitment_layers,
+-        height=config.height,
++        height=commitment.config.height,
+     );
+ 
+     let (expected_commitment) = compute_root_from_queries{authentications=authentications}(
