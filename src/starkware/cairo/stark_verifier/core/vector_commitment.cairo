@@ -14,7 +14,7 @@ from starkware.cairo.stark_verifier.core.channel import (
     Channel,
     ChannelSentFelt,
     ChannelUnsentFelt,
-    read_felt_from_prover,
+    read_truncated_hash_from_prover,
 )
 
 // Commitment values for a vector commitment. Used to generate a commitment by "reading" these
@@ -70,7 +70,9 @@ func vector_commit{
 }(unsent_commitment: VectorUnsentCommitment, config: VectorCommitmentConfig*) -> (
     res: VectorCommitment*
 ) {
-    let (commitment_hash_value) = read_felt_from_prover(value=unsent_commitment.commitment_hash);
+    let (commitment_hash_value) = read_truncated_hash_from_prover(
+        value=unsent_commitment.commitment_hash
+    );
     return (res=new VectorCommitment(config=config, commitment_hash=commitment_hash_value));
 }
 
@@ -121,7 +123,7 @@ func vector_commitment_decommit{
     let n_verifier_friendly_layers = calc_n_verifier_friendly_layers(
         n_columns=n_columns,
         n_verifier_friendly_commitment_layers=config.n_verifier_friendly_commitment_layers,
-        height=config.height,
+        height=commitment.config.height,
     );
 
     let (expected_commitment) = compute_root_from_queries{authentications=authentications}(

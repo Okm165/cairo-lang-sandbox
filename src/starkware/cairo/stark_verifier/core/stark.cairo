@@ -55,6 +55,7 @@ from starkware.cairo.stark_verifier.core.table_commitment import (
     table_commit,
     table_decommit,
 )
+from starkware.cairo.stark_verifier.core.utils import compute_powers_array
 
 // Protocol components:
 // ======================
@@ -221,8 +222,13 @@ func stark_commit{
     );
 
     // Generate interaction values after traces commitment.
+    let (composition_alpha: felt*) = alloc();
+    random_felts_to_prover(n_elements=1, elements=composition_alpha);
     let (traces_coefficients: felt*) = alloc();
-    random_felts_to_prover(n_elements=air.n_constraints, elements=traces_coefficients);
+    compute_powers_array(
+        data_ptr=traces_coefficients, alpha=[composition_alpha], cur=1, n=air.n_constraints
+    );
+
     let (interaction_after_traces: InteractionValuesAfterTraces*) = alloc();
     assert [interaction_after_traces] = InteractionValuesAfterTraces(
         coefficients=traces_coefficients
@@ -258,8 +264,10 @@ func stark_commit{
     );
 
     // Generate interaction values after OODS.
+    let (oods_alpha: felt*) = alloc();
+    random_felts_to_prover(n_elements=1, elements=oods_alpha);
     let (oods_coefficients: felt*) = alloc();
-    random_felts_to_prover(n_elements=n_oods_values, elements=oods_coefficients);
+    compute_powers_array(data_ptr=oods_coefficients, alpha=[oods_alpha], cur=1, n=n_oods_values);
     tempvar interaction_after_oods = new InteractionValuesAfterOods(coefficients=oods_coefficients);
 
     // Read fri commitment.

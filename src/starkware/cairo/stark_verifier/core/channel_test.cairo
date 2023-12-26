@@ -6,11 +6,10 @@ from starkware.cairo.stark_verifier.core.channel import (
     ChannelSentFelt,
     ChannelUnsentFelt,
     channel_new,
-    random_felts_to_prover,
     random_uint256_to_prover,
-    read_felt_from_prover,
     read_felt_vector_from_prover,
     read_felts_from_prover,
+    read_truncated_hash_from_prover,
 )
 
 func test_to{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, blake2s_ptr: felt*}() {
@@ -46,7 +45,7 @@ func test_from{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, blake2s_ptr: felt*
         assert channel.digest = original_channel.digest;
         assert channel.counter = original_channel.counter;
 
-        let (value) = read_felt_from_prover(ChannelUnsentFelt(2 ** 160 - 1));
+        let (value) = read_truncated_hash_from_prover(ChannelUnsentFelt(2 ** 160 - 1));
         assert value = ChannelSentFelt(2 ** 160 - 1);
         assert channel.digest = Uint256(
             56167004286255481276482511662906702549, 234392798194350380932282913623756516436

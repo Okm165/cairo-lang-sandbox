@@ -113,7 +113,6 @@ func execute_task{builtin_ptrs: BuiltinData*, self_range_check_ptr}(
     select_input_builtins(
         all_encodings=builtin_encodings,
         all_ptrs=&pre_execution_builtin_ptrs,
-        n_all_builtins=BuiltinData.SIZE,
         selected_encodings=builtin_list,
         n_selected_builtins=n_builtins,
     );

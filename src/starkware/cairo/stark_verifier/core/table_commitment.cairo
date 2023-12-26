@@ -149,7 +149,7 @@ func generate_vector_queries{range_check_ptr, blake2s_ptr: felt*, bitwise_ptr: B
     blake2s_add_felts{data=data}(n_elements=n_columns, elements=values, bigend=1);
     let (hash) = blake2s_bigend(data=data_start, n_bytes=32 * n_columns);
 
-    // Truncate hash - convert value to felt, by taking the 160 least significant bits.
+    // Truncate hash - convert value to felt, by taking the least significant 160 bits.
     let (high_h, high_l) = unsigned_div_rem(hash.high, 2 ** 32);
     assert vector_queries.value = high_l * 2 ** 128 + hash.low;
 
