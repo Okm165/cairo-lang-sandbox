@@ -1,0 +1,409 @@
+{
+    "attributes": [],
+    "builtins": [],
+    "compiler_version": "0.11.0",
+    "data": [],
+    "debug_info": {
+        "file_contents": {
+            "/app/src/starkware/cairo/lang/compiler/lib/registers.cairo": "// Returns the contents of the fp and pc registers of the calling function.\n// The pc register's value is the address of the instruction that follows directly after the\n// invocation of get_fp_and_pc().\nfunc get_fp_and_pc() -> (fp_val: felt*, pc_val: felt*) {\n    // The call instruction itself already places the old fp and the return pc at\n    // [ap - 2], [ap - 1].\n    return (fp_val=cast([ap - 2], felt*), pc_val=cast([ap - 1], felt*));\n}\n\n// Returns the content of the ap register just before this function was invoked.\n@known_ap_change\nfunc get_ap() -> (ap_val: felt*) {\n    // Once get_ap() is invoked, fp points to ap + 2 (since the call instruction placed the old fp\n    // and pc in memory, advancing ap accordingly).\n    // Hence, the desired ap value is fp - 2.\n    let (fp_val, pc_val) = get_fp_and_pc();\n    return (ap_val=fp_val - 2);\n}\n",
+            "/app/src/starkware/starknet/common/new_syscalls.cairo": "// Syscall selectors.\n\nconst CALL_CONTRACT_SELECTOR = 'CallContract';\nconst DEPLOY_SELECTOR = 'Deploy';\nconst EMIT_EVENT_SELECTOR = 'EmitEvent';\nconst GET_EXECUTION_INFO_SELECTOR = 'GetExecutionInfo';\nconst LIBRARY_CALL_SELECTOR = 'LibraryCall';\nconst REPLACE_CLASS_SELECTOR = 'ReplaceClass';\nconst SEND_MESSAGE_TO_L1_SELECTOR = 'SendMessageToL1';\nconst STORAGE_READ_SELECTOR = 'StorageRead';\nconst STORAGE_WRITE_SELECTOR = 'StorageWrite';\n\n// Syscall structs.\n\nstruct ExecutionInfo {\n    block_info: BlockInfo*,\n    tx_info: TxInfo*,\n\n    // Entry-point-specific info.\n\n    caller_address: felt,\n    // The execution is done in the context of the contract at this address.\n    // It controls the storage being used, messages sent to L1, calling contracts, etc.\n    contract_address: felt,\n    // The entry point selector.\n    selector: felt,\n}\n\nstruct BlockInfo {\n    block_number: felt,\n    block_timestamp: felt,\n    // The address of the sequencer that is creating this block.\n    sequencer_address: felt,\n}\n\nstruct TxInfo {\n    // The version of the transaction. It is fixed in the OS, and should be signed by the account\n    // contract.\n    // This field allows invalidating old transactions, whenever the meaning of the other\n    // transaction fields is changed (in the OS).\n    version: felt,\n    // The account contract from which this transaction originates.\n    account_contract_address: felt,\n    // The max_fee field of the transaction.\n    max_fee: felt,\n    // The signature of the transaction.\n    signature_start: felt*,\n    signature_end: felt*,\n    // The hash of the transaction.\n    transaction_hash: felt,\n    // The identifier of the chain.\n    // This field can be used to prevent replay of testnet transactions on mainnet.\n    chain_id: felt,\n    // The transaction's nonce.\n    nonce: felt,\n}\n\n// Shared attributes.\n\nstruct RequestHeader {\n    // The syscall selector.\n    selector: felt,\n    // The amount of gas left before the syscall execution.\n    gas: felt,\n}\n\nstruct ResponseHeader {\n    // The amount of gas left after the syscall execution.\n    gas: felt,\n    // 0 if the syscall succeeded; 1 otherwise.\n    failure_flag: felt,\n}\n\nstruct FailureReason {\n    start: felt*,\n    end: felt*,\n}\n\n// Syscall requests.\n\nstruct CallContractRequest {\n    // The address of the L2 contract to call.\n    contract_address: felt,\n    // The selector of the function to call.\n    selector: felt,\n    // The calldata.\n    calldata_start: felt*,\n    calldata_end: felt*,\n}\n\nstruct LibraryCallRequest {\n    // The hash of the class to run.\n    class_hash: felt,\n    // The selector of the function to call.\n    selector: felt,\n    // The calldata.\n    calldata_start: felt*,\n    calldata_end: felt*,\n}\n\nstruct EmptyRequest {\n}\n\nstruct DeployRequest {\n    // The hash of the class to deploy.\n    class_hash: felt,\n    // A salt for the new contract address calculation.\n    contract_address_salt: felt,\n    // The calldata for the constructor.\n    constructor_calldata_start: felt*,\n    constructor_calldata_end: felt*,\n    // Used for deterministic contract address deployment.\n    deploy_from_zero: felt,\n}\n\nstruct StorageReadRequest {\n    reserved: felt,\n    key: felt,\n}\n\nstruct StorageWriteRequest {\n    reserved: felt,\n    key: felt,\n    value: felt,\n}\n\nstruct EmitEventRequest {\n    keys_start: felt*,\n    keys_end: felt*,\n    data_start: felt*,\n    data_end: felt*,\n}\n\nstruct ReplaceClassRequest {\n    class_hash: felt,\n}\n\nstruct SendMessageToL1Request {\n    to_address: felt,\n    payload_start: felt*,\n    payload_end: felt*,\n}\n\n// Syscall responses.\n\nstruct CallContractResponse {\n    retdata_start: felt*,\n    retdata_end: felt*,\n}\n\nstruct DeployResponse {\n    contract_address: felt,\n    constructor_retdata_start: felt*,\n    constructor_retdata_end: felt*,\n}\n\nstruct StorageReadResponse {\n    value: felt,\n}\n\nstruct GetExecutionInfoResponse {\n    execution_info: ExecutionInfo*,\n}\n"
+        },
+        "instruction_locations": {}
+    },
+    "hints": {},
+    "identifiers": {
+        "__main__.BlockInfo": {
+            "full_name": "__main__.BlockInfo",
+            "members": {
+                "block_number": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "block_timestamp": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "sequencer_address": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                }
+            },
+            "size": 3,
+            "type": "struct"
+        },
+        "__main__.CALL_CONTRACT_SELECTOR": {
+            "type": "const",
+            "value": 20853273475220472486191784820
+        },
+        "__main__.CallContractRequest": {
+            "full_name": "__main__.CallContractRequest",
+            "members": {
+                "calldata_end": {
+                    "cairo_type": "felt*",
+                    "offset": 3
+                },
+                "calldata_start": {
+                    "cairo_type": "felt*",
+                    "offset": 2
+                },
+                "contract_address": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "selector": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                }
+            },
+            "size": 4,
+            "type": "struct"
+        },
+        "__main__.CallContractResponse": {
+            "full_name": "__main__.CallContractResponse",
+            "members": {
+                "retdata_end": {
+                    "cairo_type": "felt*",
+                    "offset": 1
+                },
+                "retdata_start": {
+                    "cairo_type": "felt*",
+                    "offset": 0
+                }
+            },
+            "size": 2,
+            "type": "struct"
+        },
+        "__main__.DEPLOY_SELECTOR": {
+            "type": "const",
+            "value": 75202468540281
+        },
+        "__main__.DeployRequest": {
+            "full_name": "__main__.DeployRequest",
+            "members": {
+                "class_hash": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "constructor_calldata_end": {
+                    "cairo_type": "felt*",
+                    "offset": 3
+                },
+                "constructor_calldata_start": {
+                    "cairo_type": "felt*",
+                    "offset": 2
+                },
+                "contract_address_salt": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "deploy_from_zero": {
+                    "cairo_type": "felt",
+                    "offset": 4
+                }
+            },
+            "size": 5,
+            "type": "struct"
+        },
+        "__main__.DeployResponse": {
+            "full_name": "__main__.DeployResponse",
+            "members": {
+                "constructor_retdata_end": {
+                    "cairo_type": "felt*",
+                    "offset": 2
+                },
+                "constructor_retdata_start": {
+                    "cairo_type": "felt*",
+                    "offset": 1
+                },
+                "contract_address": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 3,
+            "type": "struct"
+        },
+        "__main__.EMIT_EVENT_SELECTOR": {
+            "type": "const",
+            "value": 1280709301550335749748
+        },
+        "__main__.EmitEventRequest": {
+            "full_name": "__main__.EmitEventRequest",
+            "members": {
+                "data_end": {
+                    "cairo_type": "felt*",
+                    "offset": 3
+                },
+                "data_start": {
+                    "cairo_type": "felt*",
+                    "offset": 2
+                },
+                "keys_end": {
+                    "cairo_type": "felt*",
+                    "offset": 1
+                },
+                "keys_start": {
+                    "cairo_type": "felt*",
+                    "offset": 0
+                }
+            },
+            "size": 4,
+            "type": "struct"
+        },
+        "__main__.EmptyRequest": {
+            "full_name": "__main__.EmptyRequest",
+            "members": {},
+            "size": 0,
+            "type": "struct"
+        },
+        "__main__.ExecutionInfo": {
+            "full_name": "__main__.ExecutionInfo",
+            "members": {
+                "block_info": {
+                    "cairo_type": "__main__.BlockInfo*",
+                    "offset": 0
+                },
+                "caller_address": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                },
+                "contract_address": {
+                    "cairo_type": "felt",
+                    "offset": 3
+                },
+                "selector": {
+                    "cairo_type": "felt",
+                    "offset": 4
+                },
+                "tx_info": {
+                    "cairo_type": "__main__.TxInfo*",
+                    "offset": 1
+                }
+            },
+            "size": 5,
+            "type": "struct"
+        },
+        "__main__.FailureReason": {
+            "full_name": "__main__.FailureReason",
+            "members": {
+                "end": {
+                    "cairo_type": "felt*",
+                    "offset": 1
+                },
+                "start": {
+                    "cairo_type": "felt*",
+                    "offset": 0
+                }
+            },
+            "size": 2,
+            "type": "struct"
+        },
+        "__main__.GET_EXECUTION_INFO_SELECTOR": {
+            "type": "const",
+            "value": 94901967946959054011942058057773508207
+        },
+        "__main__.GetExecutionInfoResponse": {
+            "full_name": "__main__.GetExecutionInfoResponse",
+            "members": {
+                "execution_info": {
+                    "cairo_type": "__main__.ExecutionInfo*",
+                    "offset": 0
+                }
+            },
+            "size": 1,
+            "type": "struct"
+        },
+        "__main__.LIBRARY_CALL_SELECTOR": {
+            "type": "const",
+            "value": 92376026794327011772951660
+        },
+        "__main__.LibraryCallRequest": {
+            "full_name": "__main__.LibraryCallRequest",
+            "members": {
+                "calldata_end": {
+                    "cairo_type": "felt*",
+                    "offset": 3
+                },
+                "calldata_start": {
+                    "cairo_type": "felt*",
+                    "offset": 2
+                },
+                "class_hash": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "selector": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                }
+            },
+            "size": 4,
+            "type": "struct"
+        },
+        "__main__.REPLACE_CLASS_SELECTOR": {
+            "type": "const",
+            "value": 25500403217443378527601783667
+        },
+        "__main__.ReplaceClassRequest": {
+            "full_name": "__main__.ReplaceClassRequest",
+            "members": {
+                "class_hash": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 1,
+            "type": "struct"
+        },
+        "__main__.RequestHeader": {
+            "full_name": "__main__.RequestHeader",
+            "members": {
+                "gas": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "selector": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 2,
+            "type": "struct"
+        },
+        "__main__.ResponseHeader": {
+            "full_name": "__main__.ResponseHeader",
+            "members": {
+                "failure_flag": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "gas": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 2,
+            "type": "struct"
+        },
+        "__main__.SEND_MESSAGE_TO_L1_SELECTOR": {
+            "type": "const",
+            "value": 433017908768303439907196859243777073
+        },
+        "__main__.STORAGE_READ_SELECTOR": {
+            "type": "const",
+            "value": 100890693370601760042082660
+        },
+        "__main__.STORAGE_WRITE_SELECTOR": {
+            "type": "const",
+            "value": 25828017502874050592466629733
+        },
+        "__main__.SendMessageToL1Request": {
+            "full_name": "__main__.SendMessageToL1Request",
+            "members": {
+                "payload_end": {
+                    "cairo_type": "felt*",
+                    "offset": 2
+                },
+                "payload_start": {
+                    "cairo_type": "felt*",
+                    "offset": 1
+                },
+                "to_address": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 3,
+            "type": "struct"
+        },
+        "__main__.StorageReadRequest": {
+            "full_name": "__main__.StorageReadRequest",
+            "members": {
+                "key": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "reserved": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 2,
+            "type": "struct"
+        },
+        "__main__.StorageReadResponse": {
+            "full_name": "__main__.StorageReadResponse",
+            "members": {
+                "value": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 1,
+            "type": "struct"
+        },
+        "__main__.StorageWriteRequest": {
+            "full_name": "__main__.StorageWriteRequest",
+            "members": {
+                "key": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "reserved": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                },
+                "value": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                }
+            },
+            "size": 3,
+            "type": "struct"
+        },
+        "__main__.TxInfo": {
+            "full_name": "__main__.TxInfo",
+            "members": {
+                "account_contract_address": {
+                    "cairo_type": "felt",
+                    "offset": 1
+                },
+                "chain_id": {
+                    "cairo_type": "felt",
+                    "offset": 6
+                },
+                "max_fee": {
+                    "cairo_type": "felt",
+                    "offset": 2
+                },
+                "nonce": {
+                    "cairo_type": "felt",
+                    "offset": 7
+                },
+                "signature_end": {
+                    "cairo_type": "felt*",
+                    "offset": 4
+                },
+                "signature_start": {
+                    "cairo_type": "felt*",
+                    "offset": 3
+                },
+                "transaction_hash": {
+                    "cairo_type": "felt",
+                    "offset": 5
+                },
+                "version": {
+                    "cairo_type": "felt",
+                    "offset": 0
+                }
+            },
+            "size": 8,
+            "type": "struct"
+        }
+    },
+    "main_scope": "__main__",
+    "prime": "0x800000000000011000000000000000000000000000000000000000000000001",
+    "reference_manager": {
+        "references": []
+    }
+}
