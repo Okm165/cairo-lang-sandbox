@@ -2,3 +2,7 @@
 __pycache__/
 cairo-lang-*.zip
 /.vscode/
+
+cairo_verifier_trace.json
+cairo_verifier_memory.json
+cairo_verifier.json
